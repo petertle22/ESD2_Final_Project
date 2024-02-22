@@ -13,24 +13,24 @@ client = tcpclient(server_ip,server_port);
 fprintf(1,"Connected to server\n");
 
 % x,y,z,yaw[z],pitch[y],roll[x]
-x = -10;
-y = 13;
-z = 0;
-pitch = 55;
+x = -8;
+y = 4.5;
+z = 14;
+pitch = 25;
 roll = 0;
-yaw = 90;
+yaw = 137;
 pose = [x,y,z,yaw,pitch,roll];
 unityImageLeft = unityLink(client,pose);
 subplot(1, 2, 1);
 imshow(unityImageLeft);
 
 
-x2 = 10;
-y2 = 13;
-z2 = 0;
-pitch2 = 55;
+x2 = 8;
+y2 = 4.5;
+z2 = -14;
+pitch2 = 25;
 roll2 = 0;
-yaw2 = -90;
+yaw2 = -43;
 pose2 = [x2,y2,z2,yaw2,pitch2,roll2]
 unityImageRight = unityLink(client,pose2);
 subplot(1, 2, 2);
