@@ -1,9 +1,9 @@
 figure
-firstFrame = imread("left1_3.jpg");
+firstFrame = imread("testImages/left1_1.jpg");
 imshow(firstFrame)
 
 figure
-secondFrame = imread("left2_3.jpg");
+secondFrame = imread("testImages/left2_1.jpg");
 imshow(secondFrame)
 
 
