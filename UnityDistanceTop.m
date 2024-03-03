@@ -23,7 +23,7 @@ pose = [x,y,z,yaw,pitch,roll];
 unityImageLeft = unityLink(client,pose);
 %subplot(1, 2, 1);
 imshow(unityImageLeft);
-imsave;
+%imsave;
 
 %x2 = 8;
 %y2 = 4.5;
