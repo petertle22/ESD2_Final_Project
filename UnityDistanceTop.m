@@ -19,11 +19,12 @@ z = 0;
 pitch = 90;
 roll = 0;
 yaw = 90;
-pose = [x,y,z,yaw,pitch,roll];
+obj = 2; % 1 means camera, 2 means ball
+pose = [x,y,z,yaw,pitch,roll, obj];
 unityImageLeft = unityLink(client,pose);
 %subplot(1, 2, 1);
 imshow(unityImageLeft);
-imsave;
+%imsave;
 
 %x2 = 8;
 %y2 = 4.5;

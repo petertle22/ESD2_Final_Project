@@ -10,9 +10,10 @@ z = pose(3);
 yaw = pose(4);
 pitch = pose(5);
 roll = pose(6);
+obj = pose(7);
 
 %Set Position
-write(TCP_Handle,single([width,height,x,y,z,yaw,pitch,roll]));
+write(TCP_Handle,single([width,height,x,y,z,yaw,pitch,roll,obj]));
 
 %Get image data
 data = read(TCP_Handle,width*height*3);
