@@ -19,23 +19,23 @@ z = 0;
 pitch = 90;
 roll = 0;
 yaw = 90;
-obj = 2; % 1 means camera, 2 means ball
+obj = 1; % 1 means camera, 2 means ball
 pose = [x,y,z,yaw,pitch,roll, obj];
 unityImageLeft = unityLink(client,pose);
-%subplot(1, 2, 1);
+subplot(1, 2, 1);
 imshow(unityImageLeft);
-%imsave;
 
-%x2 = 8;
-%y2 = 4.5;
-%z2 = -14;
-%pitch2 = 25;
-%roll2 = 0;
-%yaw2 = -43;
-%pose2 = [x2,y2,z2,yaw2,pitch2,roll2];
-%unityImageRight = unityLink(client,pose2);
-%subplot(1, 2, 2);
-%imshow(unityImageRight);
+x2 = 0;
+y2 = 13.5;
+z2 = 0;
+pitch2 = 90;
+roll2 = 0;
+yaw2 = 90;
+obj2 = 1;
+pose2 = [x2,y2,z2,yaw2,pitch2,roll2, obj2];
+unityImageRight = unityLink(client,pose2);
+subplot(1, 2, 2);
+imshow(unityImageRight);
 
 
 %Close Gracefully
