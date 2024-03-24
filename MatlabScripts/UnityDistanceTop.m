@@ -14,7 +14,7 @@ fprintf(1,"Connected to server\n");
 
 % x,y,z,yaw[z],pitch[y],roll[x]
 x = 0;
-y = 13.5;
+y = 4.2;
 z = -0.03;
 pitch = 90;
 roll = 0;
@@ -22,12 +22,12 @@ yaw = 90;
 obj = 1; % 1 means camera, 2 means ball
 pose = [x,y,z,yaw,pitch,roll, obj];
 unityImageLeft = unityLink(client,pose);
-subplot(1, 2, 1);
+%subplot(1, 2, 1);
 imshow(unityImageLeft);
-imsave;
+imsave
 
 x2 = 0;
-y2 = 13.5;
+y2 = 4.2;
 z2 = 0.03;
 pitch2 = 90;
 roll2 = 0;
@@ -35,10 +35,9 @@ yaw2 = 90;
 obj2 = 1;
 pose2 = [x2,y2,z2,yaw2,pitch2,roll2, obj2];
 unityImageRight = unityLink(client,pose2);
-subplot(1, 2, 2);
+%subplot(1, 2, 2);
 imshow(unityImageRight);
 imsave
-
 
 %Close Gracefully
 fprintf(1,"Disconnected from server\n");
