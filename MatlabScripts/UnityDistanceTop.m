@@ -14,8 +14,8 @@ fprintf(1,"Connected to server\n");
 
 % x,y,z,yaw[z],pitch[y],roll[x]
 x = 0;
-y = 13.5;
-z = -0.03;
+y = 9;
+z = -0.050;
 pitch = 90;
 roll = 0;
 yaw = 90;
@@ -24,11 +24,11 @@ pose = [x,y,z,yaw,pitch,roll, obj];
 unityImageLeft = unityLink(client,pose);
 subplot(1, 2, 1);
 imshow(unityImageLeft);
-imsave;
+imwrite(unityImageLeft, 'left.jpg');
 
 x2 = 0;
-y2 = 13.5;
-z2 = 0.03;
+y2 = 9;
+z2 = 0.050;
 pitch2 = 90;
 roll2 = 0;
 yaw2 = 90;
@@ -37,8 +37,7 @@ pose2 = [x2,y2,z2,yaw2,pitch2,roll2, obj2];
 unityImageRight = unityLink(client,pose2);
 subplot(1, 2, 2);
 imshow(unityImageRight);
-imsave
-
+imwrite(unityImageRight, 'right.jpg');
 
 %Close Gracefully
 fprintf(1,"Disconnected from server\n");
