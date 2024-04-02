@@ -29,6 +29,7 @@ ps = .006;              % pixel size [mm]
 xNumPix = 752;          % total number of pixels in x direction of the sensor [px]
 cxLeft = xNumPix/2;     % left camera x center [px]
 cxRight = xNumPix/2;    % right camera x center [px]
+cameraHeight = 9;
 
 
 % %Get Frame n from UNITY%
@@ -38,11 +39,10 @@ leftImage=[leftTestImage1,leftTestImage2,leftTestImage3,leftTestImage4,leftTestI
 rightImage=[rightTestImage1,rightTestImage2,rightTestImage3,rightTestImage4,rightTestImage5];
 %Empty frame load and proccessed 
 %load [emptyLeft, emptyRight] %Binarized, sobel filtered
-for i = 1:5
-    
 emptyLeftGray = rgb2gray(emptyLeftImage);
 
 emptyRightGray = rgb2gray(emptyRightImage);
+for i = 1:5
 
 %FPGA Image Processing
 if(i==1)
@@ -84,9 +84,11 @@ xRight = findSphereCenter(rightBinarize);
 d = (abs((xLeft-cxLeft)-(xRight-cxRight))*ps);  % disparity [mm]•
 Z = (b * f)/d;                                  % depth [mm]
 Z= Z/1000;                                     %depth [m]
-ZValues(i)=Z;
-disp(['The depth is ' num2str(Z) ' [m]'])
+AdjustedZ = cameraHeight - Z;
+ZValues(i)=AdjustedZ;
+disp(['The depth is ' num2str(AdjustedZ) ' [m]'])
 end
+
 figure;
 subplot(2,2,1);
 imshow(rightTestImage5);
@@ -105,14 +107,14 @@ imshow(rightBinarize);
 title('Right Gray image minus empty Gray');
 
 figure;
-scatter(d,Z)
+scatter(d,AdjustedZ)
 title("Disparity vs Depth")
 xlabel("Disparity [pixels]")
 ylabel("Depth [m]")
 
 %Graph accuracy of calculated depth vs actual
 figure;
-scatter(Z, actaulValues, 'filled');
+scatter(AdjustedZ, actaulValues, 'filled');
 hold on;
 
 plot([ZValues actaulValues],'k--');
