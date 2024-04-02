@@ -5,8 +5,9 @@
 % ShotType
 % MatchType
 % t = 0;
-actaul= 1.5;
-
+ZValues=zeros(1,5);
+actaulValues=zeros(1,5);
+actaulValues=[1.5,2.5,5.5,2.5,1.5];
 %Test Images
 emptyLeftImage=imread("testImages/LeftEmptyCourt.jpg");
 emptyRightImage=imread("testImages/rightEmptyCourt.jpg");
@@ -37,75 +38,73 @@ leftImage=[leftTestImage1,leftTestImage2,leftTestImage3,leftTestImage4,leftTestI
 rightImage=[rightTestImage1,rightTestImage2,rightTestImage3,rightTestImage4,rightTestImage5];
 %Empty frame load and proccessed 
 %load [emptyLeft, emptyRight] %Binarized, sobel filtered
-for i= 1:length(rightImage) 
+for i = 1:5
     
 emptyLeftGray = rgb2gray(emptyLeftImage);
-imshow(emptyLeftGray);
 
 emptyRightGray = rgb2gray(emptyRightImage);
-imshow(emptyRightGray);
 
 %FPGA Image Processing
 if(i==1)
 rightGray = rgb2gray(rightTestImage1);
-imshow(rightGray);
 
 leftGray = rgb2gray(leftTestImage1);
-imshow(leftGray);
 
 elseif(i==2)
 rightGray = rgb2gray(rightTestImage2);
-imshow(rightGray);
 
 leftGray = rgb2gray(leftTestImage2);
-imshow(leftGray);
  
 
 elseif(i==3)
 rightGray = rgb2gray(rightTestImage3);
-imshow(rightGray);
 
 leftGray = rgb2gray(leftTestImage3);
-imshow(leftGray);
 
 elseif(i==4)
 rightGray = rgb2gray(rightTestImage4);
-imshow(rightGray);
 
 leftGray = rgb2gray(leftTestImage4);
-imshow(leftGray);
  
 elseif(i==5)
 rightGray = rgb2gray(rightTestImage5);
-imshow(rightGray);
 
 leftGray = rgb2gray(leftTestImage5);
-imshow(leftGray);
 
  end
 processedLeft = emptyLeftGray - leftGray;
 processedRight = emptyRightGray - rightGray;
-
-imshow(processedLeft);
-imshow(processedRight);
-
 leftBinarize=imbinarize(processedLeft);
-imshow(leftBinarize);
 rightBinarize=imbinarize(processedRight);
-imshow(rightBinarize);
 %Centroid detection algorithm
-xLeft=zeros(1,length(rightImage));
-xRight=zeros(1,length(rightImage));
-xLeft(i) = sphereCenterX(leftBinarize);
-xRight(i) = sphereCenterX(rightBinarize);
+xLeft = findSphereCenter(leftBinarize);
+xRight = findSphereCenter(rightBinarize);
 
 %Convert to depth
 d = (abs((xLeft-cxLeft)-(xRight-cxRight))*ps);  % disparity [mm]•
-Z = (b * f)./d;                                  % depth [mm]
+Z = (b * f)/d;                                  % depth [mm]
 Z= Z/1000;                                     %depth [m]
+ZValues(i)=Z;
 disp(['The depth is ' num2str(Z) ' [m]'])
 end
+figure;
+subplot(2,2,1);
+imshow(rightTestImage5);
+title('Image before processing');
 
+subplot(2,2,2);
+imshow(rightGray);
+title('Right image Gray Scaled');
+
+subplot(2,2,3);
+imshow(processedRight);
+title('Right Gray image minus empty Gray');
+
+subplot(2,2,4);
+imshow(rightBinarize);
+title('Right Gray image minus empty Gray');
+
+figure;
 scatter(d,Z)
 title("Disparity vs Depth")
 xlabel("Disparity [pixels]")
@@ -113,10 +112,10 @@ ylabel("Depth [m]")
 
 %Graph accuracy of calculated depth vs actual
 figure;
-scatter(Z, actual, 'filled');
+scatter(Z, actaulValues, 'filled');
 hold on;
 
-plot([z actaul],'k--');
+plot([ZValues actaulValues],'k--');
 xlabel('Depth');
 ylabel('Real Depth');
 title('Depth vs. Real Depth');
