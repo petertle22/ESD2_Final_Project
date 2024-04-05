@@ -12,6 +12,23 @@ server_port = 55001;           %Server Port of the Unity Sever
 client = tcpclient(server_ip,server_port);
 fprintf(1,"Connected to server\n");
 
+  %[x, y, z] = ballBounce(0.3);
+
+  % x,y,z,yaw[z],pitch[y],roll[x]
+  x = 0;
+  y = 9;
+  z = -0.050;
+  pitch = 90;
+  roll = 0;
+  yaw = 90;
+  obj = 1; % 1 means camera, 2 means ball
+  pose = [x,y,z,yaw,pitch,roll, obj]
+  unityImageLeft = unityLink(client,pose);
+  %figure;
+  %%subplot(1, 2, 1);
+  %%imshow(unityImageLeft);
+
+%{
 % x,y,z,yaw[z],pitch[y],roll[x]
 x = 0;
 y = 9;
@@ -38,6 +55,7 @@ unityImageRight = unityLink(client,pose2);
 subplot(1, 2, 2);
 imshow(unityImageRight);
 imwrite(unityImageRight, 'right.jpg');
+%}
 
 %Close Gracefully
 fprintf(1,"Disconnected from server\n");
