@@ -12,21 +12,22 @@ server_port = 55001;           %Server Port of the Unity Sever
 client = tcpclient(server_ip,server_port);
 fprintf(1,"Connected to server\n");
 
-  %[x, y, z] = ballBounce(0.3);
+
+for t = 0.1 : 0.05 : 1.5
+  [x, y, z] = ballBounce(t);
 
   % x,y,z,yaw[z],pitch[y],roll[x]
-  x = 0;
-  y = 9;
-  z = -0.050;
   pitch = 90;
   roll = 0;
   yaw = 90;
-  obj = 1; % 1 means camera, 2 means ball
+  obj = 2; % 1 means camera, 2 means ball
   pose = [x,y,z,yaw,pitch,roll, obj]
   unityImageLeft = unityLink(client,pose);
+  pause(0.1);
   %figure;
   %%subplot(1, 2, 1);
   %%imshow(unityImageLeft);
+end
 
 %{
 % x,y,z,yaw[z],pitch[y],roll[x]
