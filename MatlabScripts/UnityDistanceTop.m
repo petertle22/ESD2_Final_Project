@@ -13,8 +13,8 @@ client = tcpclient(server_ip,server_port);
 fprintf(1,"Connected to server\n");
 
 
-for t = 0.1 : 0.05 : 2.5
-  [x, y, z] = volleyServe1(t);
+for t = 0.1 : 0.05 : 5
+  [x, y, z] = serve1(t);
 
   % x,y,z,yaw[z],pitch[y],roll[x]
   pitch = 90;
