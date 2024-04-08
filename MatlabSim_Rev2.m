@@ -43,6 +43,12 @@ for i = 1:length(leftImages)
     rightImages{i} = preprocessImage(rightImages{i});
 end
 
+% Shift all test images to grayscale
+for i = 1:length(leftImages)
+    leftImages{i} = shiftImage(leftImages{i}, 0, 0);
+    rightImages{i} = shiftImage(rightImages{i}, 0, 0);
+end
+
 % === Processing ===
 calculatedDepths = zeros(1, 5);
 differences = zeros(1, length(leftImages));
