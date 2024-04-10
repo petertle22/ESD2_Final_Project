@@ -45,8 +45,8 @@ end
 
 % Shift all test images to grayscale
 for i = 1:length(leftImages)
-    leftImages{i} = shiftImage(leftImages{i}, 0, 0);
-    rightImages{i} = shiftImage( rightImages{i}, 0, 0);
+    leftImages{i} = shiftImage(-20, 0, 0);
+    rightImages{i} = shiftImage(-20, 0, 0);
 end
 
 % === Processing ===
@@ -78,7 +78,7 @@ end
 % === Results Display ===
 
 % Toggle between display modes
-displayMode = 1; % Set to 1 for original display, 2 for new display mode
+displayMode = 2; % Set to 1 for original display, 2 for new display mode
 
 if displayMode == 1
     % Original Display Code (Now commented out)
@@ -119,8 +119,8 @@ else
         
         % Display background subtracted product without the shift
         % Note: Assume shiftImage function reverses the previous shift if provided with positive values
-        leftImageNoShift = shiftImage(leftImages{i}, 20, 0); % Corrected shift reversal
-        rightImageNoShift = shiftImage(rightImages{i}, 20, 0); % Corrected shift reversal
+        leftImageNoShift = shiftImage(20, 0, 0, leftImages{i}); % Corrected shift reversal
+        rightImageNoShift = shiftImage(20, 0, 0, rightImages{i}); % Corrected shift reversal
         
         figure;
         subplot(1, 2, 1);
