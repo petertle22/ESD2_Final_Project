@@ -49,6 +49,14 @@ for i = 1:length(leftImages)
     rightImages{i} = shiftImage( rightImages{i}, 0, 0);
 end
 
+% After performing the shift operations on the first set of images
+
+% Save the shifted left image of the first set as a JPEG file
+imwrite(shiftedLeftImage1, 'shiftedLeftImage1.jpg');
+
+% Save the shifted right image of the first set as a JPEG file
+imwrite(shiftedRightImage1, 'shiftedRightImage1.jpg');
+
 % === Processing ===
 calculatedDepths = zeros(1, 5);
 differences = zeros(1, length(leftImages));
