@@ -39,7 +39,7 @@ if simulink == True:
     simulinkMem.seek(4) 
     simulinkMem.write(struct.pack('l', 1))       # enable IP core
 
-print "entering main loop"
+print ("entering main loop")
 
 # feel free to modify this command structue as you wish.  It might match the 
 # command structure that is setup in the Matlab side of things on the host PC.
