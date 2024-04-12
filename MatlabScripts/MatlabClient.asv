@@ -71,10 +71,5 @@ for x = 1:5
     dataProcessed = permute(temp,[2 1]);
     imageToShow = dataProcessed(:, :, 1);
     imagesc(imageToShow);
-    colormap gray; % Sets the colormap to gray for better visualization of grayscale images
-    colorbar;  
     pause(1)
 end
-
-%Close Server
-write(client,'2');
