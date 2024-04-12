@@ -1,6 +1,5 @@
-% Dr. Kaputa
-% Virtual Camera Demo
-% must run matlabStereoServer.py first on the FPGA SoC
+% MatlabClinet_1 simply sends over a single frame in our defined format and
+% receives back the ballLeftGray image
 
 width = 752;
 height = 480;
@@ -59,8 +58,6 @@ for x = 1:5
     imageStack = permute(imageStack,[3 2 1]);
     write(client,imageStack(:));
     %temp = read(client,1);
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % receive processed frames
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
     % receive feedthrough frame
     write(client,'1');
