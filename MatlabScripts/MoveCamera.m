@@ -1,6 +1,6 @@
-function moveCamera(time)
+function [unityImageLeft, unityImageRight] = MoveCamera(time, isWind)
   clc;
-  clear all;
+  %clear all;
   close all;
   
   %Include source files in path
@@ -13,8 +13,16 @@ function moveCamera(time)
   client = tcpclient(server_ip,server_port);
   fprintf(1,"Connected to server\n");
   
-  windData = load('wind.dat');
-  [xShift, yShift, zShift] windData(time);
+  xShift = 0;
+  yShift = 0;
+  zShift = 0;
+
+  if isWind == 1
+    windData = load('datFiles/wind.dat');
+    xShift = windData(time, 1);
+    yShift = windData(time, 2);
+    yShift = windData(time, 3);
+  end
   
   % Move stereo cameras into position above the court
   x = 0 + xShift;
@@ -26,9 +34,6 @@ function moveCamera(time)
   obj = 1; % 1 means camera, 2 means ball
   pose = [x,y,z,yaw,pitch,roll, obj];
   unityImageLeft = unityLink(client,pose);
-  %subplot(1, 2, 1);
-  %imshow(unityImageLeft);
-  %imwrite(unityImageLeft, 'left.jpg');
   
   x2 = 0 + xShift;
   y2 = 9 + yShift;
@@ -39,9 +44,6 @@ function moveCamera(time)
   obj2 = 1;
   pose2 = [x2,y2,z2,yaw2,pitch2,roll2, obj2];
   unityImageRight = unityLink(client,pose2);
-  %subplot(1, 2, 2);
-  %imshow(unityImageRight);
-  %imwrite(unityImageRight, 'right.jpg');
   
   fprintf(1,"Disconnected from server\n");
 end
