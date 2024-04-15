@@ -1,6 +1,6 @@
 function moveTennisBall(time, pathToDatFile)
     clc;
-    clear all;
+    %clear all;
     close all;
 
     %Include source files in path
@@ -14,12 +14,14 @@ function moveTennisBall(time, pathToDatFile)
     fprintf(1,"Connected to server\n");
 
     ballData = load(pathToDatFile);
-    [x, y, z] = ballData(time);
+    x = ballData(time, 1);
+    y = ballData(time, 2);
+    z = ballData(time, 3);
     pitch = 90;
     roll = 0;
     yaw = 90;
     obj = 2; % 1 means camera, 2 means ball
-    pose = [x,y,z,yaw,pitch,roll, obj]
+    pose = [x,y,z,yaw,pitch,roll, obj];
     unityLink(client,pose);
 
     %Close Gracefully
