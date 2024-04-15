@@ -23,13 +23,13 @@ while(1):
     # TOP TRANSFER PROTOCOL MANAGEMENT
     cmd = npSocket.receiveCmd()  # Await Transfer Protocol cmd
     match cmd:
-        case 0:  # INIT PARAMETERS
+        case '0':  # INIT PARAMETERS
             # RESET ALL FOR NEW SHOT
 
             # Get init parameters
 
             pass  # Placeholder for implementation when cmd is 0
-        case 1:  # Process Shot
+        case '1':  # Process Shot
             t = 0; # initialize to start of shot
             frame = 0; # current frame counter
             # While more frames to process
@@ -47,7 +47,7 @@ while(1):
                 # Send Stop Command
 
             pass  # Placeholder for implementation when cmd is 1
-        case 2:  # Send Results
+        case '2':  # Send Results
             # Check Mode
                 # Shot Mode
                 # Send Mode Format TP

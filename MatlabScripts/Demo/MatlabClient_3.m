@@ -40,7 +40,8 @@ SHOT_NUM = 0;   %
 %SEND
 write(client,'0'); %Transfer Protocol
 flush(client);
-write(client,INIT_PARAMTERS);
+write(client,INIT_PARAMETERS);
+flush(client);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % REQUEST-RETRIEVE-RESPOND LOOP
