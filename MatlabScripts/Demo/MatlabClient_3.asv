@@ -44,10 +44,8 @@ write(client,INIT_PARAMTERS);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % REQUEST-RETRIEVE-RESPOND LOOP
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Tell Server to begin processing a shot
 write(client,'1'); %Transfer Protocol
 flush(client);
-
 % Loop until Server sends special value
 
     % 1. Wait for request from server (t value), exit if special value
