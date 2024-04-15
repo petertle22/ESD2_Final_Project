@@ -11,10 +11,13 @@ server_port = 55001;           %Server Port of the Unity Sever
 
 client = tcpclient(server_ip,server_port);
 fprintf(1,"Connected to server\n");
+serve1 = load('datFiles/wind.dat');
 
-for t = 0.1 : 0.05 : 2
+for t = 1 : 50 : 1000
   % Moves tennis ball to associated position
-  [x, y, z] = serve1(t);
+  x = serve1(t, 1);
+  y = serve1(t, 2);
+  z = serve1(t, 3);
 
   % x,y,z,yaw[z],pitch[y],roll[x]
   pitch = 90;
