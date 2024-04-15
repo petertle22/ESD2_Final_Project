@@ -45,9 +45,13 @@ write(client,INIT_PARAMTERS);
 % REQUEST-RETRIEVE-RESPOND LOOP
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Loop until Server sends special value
+while true
 
     % 1. Wait for request from server (t value), exit if special value
     request = read(client, 1, 'uint32');
+    if request == -1
+        break
+    end
     % 2. Retrieve Left/Right Unity images at time t
 
     % 3. Grayscale Left/Right
@@ -70,7 +74,7 @@ write(client,INIT_PARAMTERS);
     imageStack = permute(imageStack,[3 2 1]);
     write(client,imageStack(:)); %SEND
 
-%end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % RESULTS HANDELING
