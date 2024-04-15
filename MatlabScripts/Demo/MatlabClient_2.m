@@ -7,7 +7,7 @@ width = 752;
 height = 480;
 
 %Initialization Parameters
-server_ip   = '129.21.42.240';     % IP address of the server
+server_ip   = '129.21.42.202';     % IP address of the server
 server_port = 9999;                % Server Port of the sever
 
 client = tcpclient(server_ip,server_port);
