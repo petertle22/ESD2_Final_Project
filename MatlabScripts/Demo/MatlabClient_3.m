@@ -11,7 +11,9 @@ height = 480;
 % Get and save Empty Court images (Left/Right). 
 emptyLeftImage = imread("testImages/LeftEmptyCourt.jpg");
 emptyRightImage = imread("testImages/rightEmptyCourt.jpg");
-% Grayscale
+
+% Function to preprocess images (convert to grayscale)
+preprocessImage = @(img) rgb2gray(img);
 
 %Connect to sever
 % CHANGE
@@ -21,7 +23,6 @@ server_ip   = '129.21.42.240';     % IP address of the server -NEEDS CHANGE
 server_port = 9999;                % Server Port of the sever
 client = tcpclient(server_ip,server_port);
 fprintf(1,"Connected to server\n");
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -49,19 +50,24 @@ write(client,'1'); %Transfer Protocol
 flush(client);
 
 % Loop until Server sends special value
-while true
+while 1 == 1
 
     % 1. Wait for request from server (t value), exit if special value
     request = read(client, 1, 'uint32');
     if request == -1
         break
     end
+
     % 2. Retrieve Left/Right Unity images at time t
+    path = 'datFiles/serve1.dat';
+    MoveTennisBall(request, path);
+    [leftImage, rightImage] = MoveCamera(request, path); 
 
     % 3. Grayscale Left/Right
+    BallLeftGray  = preprocessImage(leftImage);
+    BallRightGray = preprocessImage(rightImage);
 
     % 4. Send Left/Right
-
     %Package all four images
     imageStack = uint8(ones(height,width,8));
     imageStack(:,:,1) = BallLeftGray;
