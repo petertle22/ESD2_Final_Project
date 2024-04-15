@@ -9,7 +9,8 @@ width = 752;
 height = 480;
 
 % Get and save Empty Court images (Left/Right). 
-
+emptyLeftImage = imread("testImages/LeftEmptyCourt.jpg");
+emptyRightImage = imread("testImages/rightEmptyCourt.jpg");
 % Grayscale
 
 %Connect to sever
@@ -21,15 +22,19 @@ server_port = 9999;                % Server Port of the sever
 client = tcpclient(server_ip,server_port);
 fprintf(1,"Connected to server\n");
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SEND SERVER INIT PARAMETERS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % For now, just leave values as is
-MODE = 0;
-MATCH_TYPE = 0;
-SHOT_TYPE = 0;
-SHOT_NUM = 0; 
-INIT_PARAMETERS = ;  %CONCATENATE ALL THESE PARAMETERS AND SEND
+MODE = 0;       % 1 -> coefficient of restitution, 2 -> ball is inside or out
+MATCH_TYPE = 0; % 1 -> singles mode, -> 2 doubles mode
+SHOT_TYPE = 0;  % 1 -> serve mode, 2 -> volley mode
+INIT_PARAMETERS = MODE * 100 + MATCH_TYPE * 10 + SHOT_TYPE;  %CONCATENATE ALL THESE PARAMETERS AND SEND
+
+% Serve/Volley Number  
+SHOT_NUM = 0;   % 
 
 %SEND
 write(client,'0'); %Transfer Protocol
@@ -77,4 +82,4 @@ flush(client);
 
 
 %Close Server
-write(client,'3');
+write(client,'9999');
