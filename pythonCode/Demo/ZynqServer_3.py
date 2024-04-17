@@ -35,9 +35,11 @@ while True:
     elif cmd == '1': # Process Shot
         t = 0  # initialize to start of shot
         frame = 0  # current frame counter
+        coordinates = np.zeros((5, 0), dtype=int)  # Initialize a 2D array with 5 rows and dynamic columns
         while t < 1775:  # While more frames to process
             # 1. Send request for frame at t
-            npSocket.write(t)
+            request_t = np.array(t, dtype=np.uint32) # Formatting 
+            npSocket.send(request_t)
             
             # 2. Receive stereoImage for t
             data = npSocket.receive()
@@ -68,15 +70,9 @@ while True:
                 pass  # NO IMPLEMENTATION YET
                 
             # 5. Centroid Detection
-            # Initialize coordinates array if not already done
-            if 'coordinates' not in locals():
-                coordinates = []
-
-            # Define a function to calculate the centroid of binarized images
             def find_centroid(binary_image):
                 contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 if contours:
-                    # Assume the largest contour is the ball
                     largest_contour = max(contours, key=cv2.contourArea)
                     M = cv2.moments(largest_contour)
                     if M["m00"] != 0:
@@ -88,12 +84,13 @@ while True:
                 else:
                     return -1, -1  # No contours found
 
-            # Calculate centroids for left and right images
             xLeft, yLeft = find_centroid(processedLeft)
             xRight, yRight = find_centroid(processedRight)
 
-            # Store centroid coordinates with current time 't' in the coordinates array
-            coordinates.append((xLeft, yLeft, xRight, yRight, t))
+            # Append results to coordinates array
+            new_coords = np.array([[xLeft], [yLeft], [xRight], [yRight], [t]])
+            coordinates = np.hstack((coordinates, new_coords))  # Append new frame data as a new column
+
             
             # 6. Stereo Calculate X,Y,Z at t
             # IMPLEMENT: TBD
@@ -108,17 +105,28 @@ while True:
         # IMPLEMENT: TBD
         
         # Send Stop Command
-        npSocket.send(-1)  # Stop Command: Tell Client to stop sending frames and instead request the result back
+        stopCmd = np.array(-1, dtype=np.uint32) # Formatting 
+        npSocket.send(stopCmd)  # Stop Command: Tell Client to stop sending frames and instead request the result back
     elif cmd == '2': # Send Results
         if mode == 1:  # Coeff Mode
             pass  # IMPLEMENT: TBD
         elif mode == 2:  # Shot Mode
             pass  # IMPLEMENT: TBD
         else:  # DEBUGGING MODE
-            npSocket.send(mode)
-            npSocket.send(len(coordinates))  # Send length of the array of coordinates
-            for coord in coordinates:
-                npSocket.send(coord)  # Send all xLeft, xRight, and t values for each index in coordinates array
+            # Send Coordinate Information
+            numFramesMsg = np.array(coordinates.shape[1], dtype=np.uint32)
+            npSocket.send(numFramesMsg)
+            
+            xLeftMsg = np.ascontiguousarray(coordinates[0, :], dtype=np.uint32)
+            yLeftMsg = np.ascontiguousarray(coordinates[1, :], dtype=np.uint32)
+            xRightMsg = np.ascontiguousarray(coordinates[2, :], dtype=np.uint32)
+            yRightMsg = np.ascontiguousarray(coordinates[3, :], dtype=np.uint32)
+            tMsg = np.ascontiguousarray(coordinates[4, :], dtype=np.uint32)
+            npSocket.send(xLeftMsg)
+            npSocket.send(yLeftMsg)
+            npSocket.send(xRightMsg)
+            npSocket.send(yRightMsg)
+            npSocket.send(tMsg)
     else:
         print("Exit Command. Close Server")
         npSocket.close()  # Close Server
