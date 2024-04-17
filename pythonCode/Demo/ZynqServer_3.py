@@ -27,9 +27,10 @@ while True:
         mode, matchType, shotType = 0, 0, 0  # Reset the following parameter values
 
         # Get init parameters
-        mode = int(npSocket.receiveCmd())
-        matchType = int(npSocket.receiveCmd())
-        shotType = int(npSocket.receiveCmd())
+        mode = int(npSocket.receiveParam())
+        matchType = int(npSocket.receiveParam())
+        shotType = int(npSocket.receiveParam())
+        print('Received Parameters')
     elif cmd == 1: # Process Shot
         t = 0  # initialize to start of shot
         frame = 0  # current frame counter
@@ -37,6 +38,7 @@ while True:
         while t < 1775:  # While more frames to process
             # 1. Send request for frame at t
             request_t = np.array(t, dtype=np.uint32) # Formatting 
+            print('Requesting frame')
             npSocket.send(request_t)
             
             # 2. Receive stereoImage for t
