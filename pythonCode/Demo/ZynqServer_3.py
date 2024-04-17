@@ -95,7 +95,7 @@ while True:
             
             # 7. Update t
             end_time = time.time()
-            t = int((end_time - start_time) * 1000)  # Convert processing time to ms
+            t += int((end_time - start_time) * 1000)  # Convert processing time to ms
             
             frame += 1  # Increment frame counter
 
