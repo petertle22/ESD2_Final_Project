@@ -8,6 +8,15 @@
 width = 752;
 height = 480;
 
+% Initialize the camera intrinsics and extrinsics
+b = 100;          % baseline [mm]
+f = 2.56;         % focal length [mm]
+ps = 0.006;       % pixel size [mm]
+xNumPix = 752;    % total number of pixels in x direction of the sensor [px]
+cxLeft = xNumPix / 2;  % left camera x center [px]
+cxRight = xNumPix / 2; % right camera x center [px]
+cameraHeight = 9; % camera height [m]
+
 % Get and save Empty Court images (Left/Right). 
 emptyLeftImage = imread("testImages/LeftEmptyCourt.jpg");
 emptyRightImage = imread("testImages/rightEmptyCourt.jpg");
@@ -17,7 +26,7 @@ preprocessImage = @(img) rgb2gray(img);
 
 %Connect to sever
 % CHANGE
-server_ip   = '129.21.88.232';     % IP address of the server -NEEDS CHANGE
+server_ip   = '172.16.194.20';     % IP address of the server -NEEDS CHANGE
 
 % NO CHNAGE
 server_port = 9999;                % Server Port of the sever
@@ -40,7 +49,7 @@ SHOT_NUM = 0;   %
 %SEND
 write(client,'0'); %Transfer Protocol
 flush(client);
-write(client,INIT_PARAMETERS);
+write(client,uint8(INIT_PARAMETERS));
 flush(client);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -91,7 +100,29 @@ end
 write(client,'2'); %Transfer Protocol
 flush(client);
 
-%TBD
+% Receive coordinates in 2D array [xLeft,yLeft,xRight,yRight,t][Frame]
+numFrames = read(client, 1, 'uint32');
+xLeft = read(client,numFrames);
+yLeft = read(client,numFrames);
+xRight = read(client,numFrames);
+yRight = read(client,numFrames);
+t = read(client,numFrames);
+
+%Calculate Depths 
+calculatedDepths_t = zeroes(numFrames);
+calculatedDepths = zeroes(numFrames);
+differences = zeroes(numFrames);
+for i = 1:numFrames
+    % Calculate depth
+    d = abs((xLeft(i) - cxLeft) - (xRight(i) - cxRight)) * ps; % disparity [mm]
+    Z = (b * f) / d; % depth [mm]
+    Z = Z / 1000; % Convert depth to meters
+    AdjustedZ = cameraHeight - Z;
+    
+    % Store calculated depth
+    calculatedDepths_t = t(i);
+    calculatedDepths(i) = AdjustedZ;
+end
 
 
 %Close Server
