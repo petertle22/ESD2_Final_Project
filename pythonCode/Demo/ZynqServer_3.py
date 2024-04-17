@@ -27,7 +27,8 @@ while True:
         mode, matchType, shotType = 0, 0, 0  # Reset the following parameter values
 
         # Get init parameters
-        param = npSocket.receiveCmd()
+        param = npSocket.receiveParam()
+        param = int(param)  # Convert param to integer
         mode = param // 100  # The three parameters are received as a single integer. Set mode, matchType, and shotType using the following encoding: param = mode * 100 + matchType * 10 + shotType
         matchType = (param // 10) % 10
         shotType = param % 10
