@@ -22,7 +22,8 @@ print("Server Started")
 while True:
     # TOP TRANSFER PROTOCOL MANAGEMENT
     cmd = npSocket.receiveCmd()  # Await Transfer Protocol cmd
-    if cmd == '0': # INIT PARAMETERS
+    cmd = int(cmd)
+    if cmd == 0: # INIT PARAMETERS
         # RESET ALL FOR NEW SHOT
         mode, matchType, shotType = 0, 0, 0  # Reset the following parameter values
 
@@ -32,7 +33,8 @@ while True:
         mode = param // 100  # The three parameters are received as a single integer. Set mode, matchType, and shotType using the following encoding: param = mode * 100 + matchType * 10 + shotType
         matchType = (param // 10) % 10
         shotType = param % 10
-    elif cmd == '1': # Process Shot
+    elif cmd == 1: # Process Shot
+        print("here 1")
         t = 0  # initialize to start of shot
         frame = 0  # current frame counter
         coordinates = np.zeros((5, 0), dtype=int)  # Initialize a 2D array with 5 rows and dynamic columns
@@ -107,7 +109,7 @@ while True:
         # Send Stop Command
         stopCmd = np.array(-1, dtype=np.uint32) # Formatting 
         npSocket.send(stopCmd)  # Stop Command: Tell Client to stop sending frames and instead request the result back
-    elif cmd == '2': # Send Results
+    elif cmd == 2: # Send Results
         if mode == 1:  # Coeff Mode
             pass  # IMPLEMENT: TBD
         elif mode == 2:  # Shot Mode
