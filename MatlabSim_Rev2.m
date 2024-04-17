@@ -45,12 +45,13 @@ end
 
 % Shift all test images to grayscale
 for i = 1:length(leftImages)
-    leftImages{i} = shiftImage(leftImages{i}, 0, 0);
-    rightImages{i} = shiftImage( rightImages{i}, 0, 0);
+    leftImages{i} = shiftImage(leftImages{i}, 20, 0);
+    rightImages{i} = shiftImage( rightImages{i}, 20, 0);
 end
 
 % After performing the shift operations on the first set of images
-
+shiftedLeftImage1 = leftImages{1};
+shiftedRightImage1 = rightImages{1};
 % Save the shifted left image of the first set as a JPEG file
 imwrite(shiftedLeftImage1, 'shiftedLeftImage1.jpg');
 
