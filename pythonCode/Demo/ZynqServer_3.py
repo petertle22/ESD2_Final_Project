@@ -4,6 +4,7 @@
 # 3. Reach determination and send STOP Command to client
 # 4. Send determination to client
 from numpysocket import NumpySocket
+from matplotlib import pyplot as plt
 import cv2
 import numpy as np
 import time
@@ -54,6 +55,8 @@ while True:
             ballRightGray = np.ascontiguousarray(ballRightGray, dtype=np.uint8)
             emptyRightGray = stereoImage[:, :, 5]
             emptyRightGray = np.ascontiguousarray(emptyRightGray, dtype=np.uint8)
+            if np.all(stereoImage == 0) :
+                break
             """
             # Start Processing timer
             start_time = time.time()  # start a timer from 0 to track processing time
@@ -102,7 +105,7 @@ while True:
             """
             t += 50
             frame += 1  # Increment frame counter
-
+        print("Exiting infinite while loop")
         # Calculate Result
         # IMPLEMENT: TBD
         

@@ -80,27 +80,46 @@ while 1
 
     % 2. Retrieve Left/Right Unity images at time t
     path = '../datFiles/serve1.dat';
-    MoveTennisBall(request, path);
-    [leftImage, rightImage] = MoveCamera(request, path); 
+    errorCode = MoveTennisBall(request, path);
 
-    % 3. Grayscale Left/Right
-    BallLeftGray  = preprocessImage(leftImage);
-    BallRightGray = preprocessImage(rightImage);
+    if errorCode == 0 
+        [leftImage, rightImage] = MoveCamera(request, path); 
 
-    % 4. Send Left/Right
-    %Package all four images
-    imageStack = uint8(ones(height,width,8));
-    imageStack(:,:,1) = BallLeftGray;
-    imageStack(:,:,2) = emptyLeftGray;
-    imageStack(:,:,3) = BallLeftGray;
-    imageStack(:,:,4) = emptyLeftGray;
-    imageStack(:,:,5) = BallRightGray;
-    imageStack(:,:,6) = emptyRightGray;
-    imageStack(:,:,7) = BallRightGray;
-    imageStack(:,:,8) = emptyRightGray;
+        % 3. Grayscale Left/Right
+        BallLeftGray  = preprocessImage(leftImage);
+        BallRightGray = preprocessImage(rightImage);
 
-    imageStack = permute(imageStack,[3 2 1]);
-    write(client,imageStack(:)); %SEND
+        % 4. Send Left/Right
+        %Package all four images
+        imageStack = uint8(ones(height,width,8));
+        imageStack(:,:,1) = BallLeftGray;
+        imageStack(:,:,2) = emptyLeftGray;
+        imageStack(:,:,3) = BallLeftGray;
+        imageStack(:,:,4) = emptyLeftGray;
+        imageStack(:,:,5) = BallRightGray;
+        imageStack(:,:,6) = emptyRightGray;
+        imageStack(:,:,7) = BallRightGray;
+        imageStack(:,:,8) = emptyRightGray;
+
+        imageStack = permute(imageStack,[3 2 1]);
+        write(client,imageStack(:)); %SEND
+    else
+        % 4. Send Left/Right
+        %Package all four images
+        imageStack = uint8(ones(height,width,8));
+        imageStack(:,:,1) = ones(480, 752) * 0;
+        imageStack(:,:,2) = ones(480, 752) * 0;
+        imageStack(:,:,3) = ones(480, 752) * 0;
+        imageStack(:,:,4) = ones(480, 752) * 0;
+        imageStack(:,:,5) = ones(480, 752) * 0;
+        imageStack(:,:,6) = ones(480, 752) * 0;
+        imageStack(:,:,7) = ones(480, 752) * 0;
+        imageStack(:,:,8) = ones(480, 752) * 0;
+
+        imageStack = permute(imageStack,[3 2 1]);
+        write(client,imageStack(:)); %SEND
+        break
+    end
 
 end
 
