@@ -32,7 +32,7 @@ while True:
         shotType = int(npSocket.receiveParam())
         print('Received Parameters')
     elif cmd == 1: # Process Shot
-        t = 0  # initialize to start of shot
+        t = 400  # initialize to start of shot
         frame = 0  # current frame counter
         coordinates = np.zeros((5, 0), dtype=int)  # Initialize a 2D array with 5 rows and dynamic columns
         while t < 1775:  # While more frames to process
