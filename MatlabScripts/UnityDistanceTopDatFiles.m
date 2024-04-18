@@ -6,14 +6,14 @@ close all;
 addpath(genpath('../src'))
 
 %Initialization Parameters
-server_ip   = '127.0.0.1';     %IP address of the Unity Server
+server_ip   = '129.21.91.42';     %IP address of the Unity Server
 server_port = 55001;           %Server Port of the Unity Sever
 
 client = tcpclient(server_ip,server_port);
 fprintf(1,"Connected to server\n");
 
 %Load in ball position function
-data = load('serve1.dat');
+data = load('datFiles/serve1.dat');
 
 for i = 1 : 5 : 2000
     % Moves tennis ball to associated position

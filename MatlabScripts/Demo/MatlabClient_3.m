@@ -17,12 +17,15 @@ cxLeft = xNumPix / 2;  % left camera x center [px]
 cxRight = xNumPix / 2; % right camera x center [px]
 cameraHeight = 9; % camera height [m]
 
+% Function to preprocess images (convert to grayscale)
+preprocessImage = @(img) rgb2gray(img);
+
 % Get and save Empty Court images (Left/Right). 
 emptyLeftImage = imread("../../testImages/LeftEmptyCourt.jpg");
 emptyRightImage = imread("../../testImages/rightEmptyCourt.jpg");
+emptyLeftGray = preprocessImage(emptyLeftImage);
+emptyRightGray = preprocessImage(emptyRightImage);
 
-% Function to preprocess images (convert to grayscale)
-preprocessImage = @(img) rgb2gray(img);
 
 %Connect to sever
 server_ip   = '129.21.91.42';     % IP address of the server -NEEDS CHANGE
