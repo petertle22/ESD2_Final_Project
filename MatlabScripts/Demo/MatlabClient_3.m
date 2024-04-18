@@ -28,7 +28,7 @@ emptyRightGray = preprocessImage(emptyRightImage);
 
 
 %Connect to sever
-server_ip   = '129.21.91.42';     % IP address of the server -NEEDS CHANGE
+server_ip   = '129.21.91.149';     % IP address of the server -NEEDS CHANGE
 
 % NO CHNAGE
 server_port = 9999;                % Server Port of the sever

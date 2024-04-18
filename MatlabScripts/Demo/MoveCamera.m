@@ -7,7 +7,7 @@ function [unityImageLeft, unityImageRight] = MoveCamera(time, isWind)
   addpath(genpath('../src'))
   
   %Initialization Parameters
-  server_ip   = '127.0.0.1';     %IP address of the Unity Server
+  server_ip   = '129.21.91.149';     %IP address of the Unity Server
   server_port = 55001;           %Server Port of the Unity Sever
   
   client = tcpclient(server_ip,server_port);
