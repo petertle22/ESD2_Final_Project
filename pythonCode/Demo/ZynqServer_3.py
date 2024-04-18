@@ -32,11 +32,12 @@ while True:
         shotType = int(npSocket.receiveParam())
         print('Received Parameters')
     elif cmd == 1: # Process Shot
-        t = 0  # initialize to start of shot
+        t = 1  # initialize to start of shot
         frame = 0  # current frame counter
         coordinates = np.zeros((5, 0), dtype=int)  # Initialize a 2D array with 5 rows and dynamic columns
-        while t < 1775:  # While more frames to process
+        while True:  # While more frames to process
             # 1. Send request for frame at t
+            print(t)
             request_t = np.array(t, dtype=np.uint32) # Formatting 
             print('Requesting frame')
             npSocket.send(request_t)
@@ -53,7 +54,7 @@ while True:
             ballRightGray = np.ascontiguousarray(ballRightGray, dtype=np.uint8)
             emptyRightGray = stereoImage[:, :, 5]
             emptyRightGray = np.ascontiguousarray(emptyRightGray, dtype=np.uint8)
-            
+            """
             # Start Processing timer
             start_time = time.time()  # start a timer from 0 to track processing time
             
@@ -98,7 +99,8 @@ while True:
             # 7. Update t
             end_time = time.time()
             t += int((end_time - start_time) * 1000)  # Convert processing time to ms
-            
+            """
+            t += 50
             frame += 1  # Increment frame counter
 
         # Calculate Result
