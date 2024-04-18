@@ -73,7 +73,6 @@ while 1
 
     % 1. Wait for request from server (t value), exit if special value
     request = read(client, 1, 'uint32');
-    request
     if request == -1
         break
     end
