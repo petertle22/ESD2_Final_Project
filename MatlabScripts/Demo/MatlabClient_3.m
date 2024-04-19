@@ -28,7 +28,7 @@ emptyRightGray = preprocessImage(emptyRightImage);
 
 
 %Connect to sever
-server_ip   = '129.21.91.149';     % IP address of the server -NEEDS CHANGE
+server_ip   = '129.21.43.209';     % IP address of the server -NEEDS CHANGE
 
 % NO CHNAGE
 server_port = 9999;                % Server Port of the sever
@@ -44,7 +44,7 @@ write(client,'0'); %Transfer Protocol
 flush(client);
 
 % For now, just leave values as is
-MODE = '2';       % 1 -> coefficient of restitution, 2 -> ball is inside or out
+MODE = '7';       % 1 -> coefficient of restitution, 2 -> ball is inside or out
 write(client, MODE);
 flush(client);
 
@@ -72,8 +72,9 @@ flush(client);
 while 1
 
     % 1. Wait for request from server (t value), exit if special value
-    request = read(client, 1, 'uint32');
-    if request == -1
+    request = read(client, 1, 'uint32')
+    request
+    if request == 99999
         break
     end
 
@@ -136,10 +137,13 @@ xRight = read(client,numFrames);
 yRight = read(client,numFrames);
 t = read(client,numFrames);
 
+realDepth = [];
+for 
+
 %Calculate Depths 
-calculatedDepths_t = zeroes(numFrames);
-calculatedDepths = zeroes(numFrames);
-differences = zeroes(numFrames);
+calculatedDepths_t = zeros(1, numFrames);
+calculatedDepths = zeros(1, numFrames);
+differences = zeros(1, numFrames);
 for i = 1:numFrames
     % Calculate depth
     d = abs((xLeft(i) - cxLeft) - (xRight(i) - cxRight)) * ps; % disparity [mm]
@@ -148,8 +152,12 @@ for i = 1:numFrames
     AdjustedZ = cameraHeight - Z;
     
     % Store calculated depth
-    calculatedDepths_t = t(i);
+    calculatedDepths_t(i) = t(i);
     calculatedDepths(i) = AdjustedZ;
+
+
+
+
 end
 
 
