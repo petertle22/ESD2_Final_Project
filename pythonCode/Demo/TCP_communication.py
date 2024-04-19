@@ -1,4 +1,5 @@
 from numpysocket import NumpySocket
+import matplotlib as plt
 import numpy as np
 
 def getInitParameters(npSocket):

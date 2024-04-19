@@ -14,6 +14,7 @@ import sys, random
 import ctypes
 import copy
 import TCP_communication as tcp
+import ballDetection as ball
 
 # CONSTANTS
 STOP_CMD = 99999
@@ -64,8 +65,7 @@ while True:
             if FPGA_ENABLE: 
                 pass  # NO IMPLEMENTATION YET
             else:
-                processedLeft = cv2.threshold(cv2.absdiff(ballLeftGray, emptyLeftGray), 200, 255, cv2.THRESH_BINARY)[1]  # Background subtraction and binarization for left image
-                processedRight = cv2.threshold(cv2.absdiff(ballRightGray, emptyRightGray), 200, 255, cv2.THRESH_BINARY)[1]  # Background subtraction and binarization for right image
+                processedLeft, processedRight = ball.process_images(ballLeftGray, emptyLeftGray, ballRightGray, emptyRightGray)
             
             # 4. Receive processedImage from FPGA
             if FPGA_ENABLE: 
@@ -73,7 +73,7 @@ while True:
                 
             # 5. Centroid Detection
             def find_centroid(binary_image):
-                _, contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2:]
                 if contours:
                     largest_contour = max(contours, key=cv2.contourArea)
                     M = cv2.moments(largest_contour)
@@ -119,6 +119,20 @@ while True:
         else:  # DEBUGGING MODE
             print('DEBUGGING RESULTS')
             # Send Coordinate Information
+            plt.imshow(ballLeftGray)
+            plt.axis('off')  # Hide the axes
+            plt.show()
+
+            plt.imshow(emptyLeftGray)
+            plt.axis('off')  # Hide the axes
+            plt.show()
+
+            plt.imshow(processedLeft)
+            plt.axis('off')  # Hide the axes
+            plt.show()
+            sendProduct = np.ascontiguousarray(processedLeft, dtype=np.uint8)
+            npSocket.send(sendProduct)
+
             numFramesMsg = np.array(coordinates.shape[1], dtype=np.uint32)
             npSocket.send(numFramesMsg)
             xLeftMsg = np.array(coordinates[0, :], dtype=np.uint32)
