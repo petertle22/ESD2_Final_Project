@@ -16,7 +16,7 @@ import copy
 import TCP_communication as tcp
 
 # CONSTANTS
-STOP_CMD = -1
+STOP_CMD = 99999
 #----------------------------------------------------------------------------------------------------------
 
 
@@ -51,7 +51,8 @@ while True:
             ballRightGray = frame_data['ballRightGray']
             emptyRightGray = frame_data['emptyRightGray']
             # If frame is empty, stop processing
-            if np.all(frame_data == 0) :
+            #if np.all(frame_data == 0) :
+            if np.all(t >= 250) :
                 print("All Frames Received")
                 break
 
@@ -63,8 +64,8 @@ while True:
             if FPGA_ENABLE: 
                 pass  # NO IMPLEMENTATION YET
             else:
-                processedLeft = cv2.threshold(cv2.absdiff(ballLeftGray, emptyLeftGray), 25, 255, cv2.THRESH_BINARY)[1]  # Background subtraction and binarization for left image
-                processedRight = cv2.threshold(cv2.absdiff(ballRightGray, emptyRightGray), 25, 255, cv2.THRESH_BINARY)[1]  # Background subtraction and binarization for right image
+                processedLeft = cv2.threshold(cv2.absdiff(ballLeftGray, emptyLeftGray), 200, 255, cv2.THRESH_BINARY)[1]  # Background subtraction and binarization for left image
+                processedRight = cv2.threshold(cv2.absdiff(ballRightGray, emptyRightGray), 200, 255, cv2.THRESH_BINARY)[1]  # Background subtraction and binarization for right image
             
             # 4. Receive processedImage from FPGA
             if FPGA_ENABLE: 
@@ -72,7 +73,7 @@ while True:
                 
             # 5. Centroid Detection
             def find_centroid(binary_image):
-                contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                _, contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 if contours:
                     largest_contour = max(contours, key=cv2.contourArea)
                     M = cv2.moments(largest_contour)
@@ -80,13 +81,14 @@ while True:
                         cx = int(M["m10"] / M["m00"])
                         cy = int(M["m01"] / M["m00"])
                     else:
-                        cx, cy = -1, -1  # Centroid not found
+                        cx, cy = 0, 0  # Centroid not found
                     return cx, cy
                 else:
-                    return -1, -1  # No contours found
+                    return 0, 0  # No contours found
 
             xLeft, yLeft = find_centroid(processedLeft)
             xRight, yRight = find_centroid(processedRight)
+
 
             # Append results to coordinates array
             new_coords = np.array([[xLeft], [yLeft], [xRight], [yRight], [t]])
@@ -106,26 +108,31 @@ while True:
         
         # Send Stop Command
         tcp.sendCMD(STOP_CMD, npSocket)  # Stop Command: Tell Client to stop sending frames and instead request the result back
+        print('sent Stop CMD')
 
     elif cmd == 2: # Send Results
+        print('Sending Results...')
         if mode == 1:  # Coeff Mode
             pass  # IMPLEMENT: TBD
         elif mode == 2:  # Shot Mode
             pass  # IMPLEMENT: TBD
         else:  # DEBUGGING MODE
+            print('DEBUGGING RESULTS')
             # Send Coordinate Information
             numFramesMsg = np.array(coordinates.shape[1], dtype=np.uint32)
             npSocket.send(numFramesMsg)
-            xLeftMsg = np.ascontiguousarray(coordinates[0, :], dtype=np.uint32)
-            yLeftMsg = np.ascontiguousarray(coordinates[1, :], dtype=np.uint32)
-            xRightMsg = np.ascontiguousarray(coordinates[2, :], dtype=np.uint32)
-            yRightMsg = np.ascontiguousarray(coordinates[3, :], dtype=np.uint32)
-            tMsg = np.ascontiguousarray(coordinates[4, :], dtype=np.uint32)
+            xLeftMsg = np.array(coordinates[0, :], dtype=np.uint32)
             npSocket.send(xLeftMsg)
+            yLeftMsg = np.array(coordinates[1, :], dtype=np.uint32)
             npSocket.send(yLeftMsg)
+            xRightMsg = np.array(coordinates[2, :], dtype=np.uint32)
             npSocket.send(xRightMsg)
+            yRightMsg = np.array(coordinates[3, :], dtype=np.uint32)
             npSocket.send(yRightMsg)
+            tMsg = np.array(coordinates[4, :], dtype=np.uint32)
             npSocket.send(tMsg)
+            print(xLeftMsg)
+            print(tMsg)
 
     else:
         print("Exit Command. Close Server")

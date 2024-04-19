@@ -90,5 +90,5 @@ def sendCMD(cmd, npSocket):
     -------
     None
     """
-    cmd = np.array(cmd, dtype=np.uint32)  # Formatting
-    npSocket.send(cmd)
+    cmd_msg = np.array(cmd, dtype=np.uint32)  # Formatting
+    npSocket.send(cmd_msg)

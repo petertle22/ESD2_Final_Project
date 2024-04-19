@@ -112,6 +112,7 @@ while True:
         stopCmd = np.array(-1, dtype=np.uint32) # Formatting 
         npSocket.send(stopCmd)  # Stop Command: Tell Client to stop sending frames and instead request the result back
     elif cmd == 2: # Send Results
+        print('HERE')
         if mode == 1:  # Coeff Mode
             pass  # IMPLEMENT: TBD
         elif mode == 2:  # Shot Mode
