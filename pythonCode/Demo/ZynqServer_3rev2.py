@@ -72,23 +72,8 @@ while True:
                 pass  # NO IMPLEMENTATION YET
                 
             # 5. Centroid Detection
-            def find_centroid(binary_image):
-                contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2:]
-                if contours:
-                    largest_contour = max(contours, key=cv2.contourArea)
-                    M = cv2.moments(largest_contour)
-                    if M["m00"] != 0:
-                        cx = int(M["m10"] / M["m00"])
-                        cy = int(M["m01"] / M["m00"])
-                    else:
-                        cx, cy = 0, 0  # Centroid not found
-                    return cx, cy
-                else:
-                    return 0, 0  # No contours found
-
-            xLeft, yLeft = find_centroid(processedLeft)
-            xRight, yRight = find_centroid(processedRight)
-
+            xLeft, yLeft = ball.find_centroid(processedLeft)
+            xRight, yRight = ball.find_centroid(processedRight)
 
             # Append results to coordinates array
             new_coords = np.array([[xLeft], [yLeft], [xRight], [yRight], [t]])
@@ -118,21 +103,28 @@ while True:
             pass  # IMPLEMENT: TBD
         else:  # DEBUGGING MODE
             print('DEBUGGING RESULTS')
-            # Send Coordinate Information
-            plt.imshow(ballLeftGray)
-            plt.axis('off')  # Hide the axes
+
+            # Display Image Processing 
+            fig, axs = plt.subplots(1, 3, figsize=(15, 5))  # 1 row, 3 columns
+            # Plot the first image: ballLeftGray
+            axs[0].imshow(ballLeftGray, cmap='gray')  # cmap='gray' ensures grayscale display
+            axs[0].axis('off')  # Hide the axes
+            axs[0].set_title('Ball Left Gray')
+            # Plot the second image: emptyLeftGray
+            axs[1].imshow(emptyLeftGray, cmap='gray')
+            axs[1].axis('off')
+            axs[1].set_title('Empty Left Gray')
+            # Plot the third image: processedLeft
+            axs[2].imshow(processedLeft, cmap='gray')
+            axs[2].axis('off')
+            axs[2].set_title('Processed Left')
             plt.show()
 
-            plt.imshow(emptyLeftGray)
-            plt.axis('off')  # Hide the axes
-            plt.show()
-
-            plt.imshow(processedLeft)
-            plt.axis('off')  # Hide the axes
-            plt.show()
+            # Send Processed Image for Confirmation
             sendProduct = np.ascontiguousarray(processedLeft, dtype=np.uint8)
             npSocket.send(sendProduct)
 
+            # Send Coordinate Information
             numFramesMsg = np.array(coordinates.shape[1], dtype=np.uint32)
             npSocket.send(numFramesMsg)
             xLeftMsg = np.array(coordinates[0, :], dtype=np.uint32)
