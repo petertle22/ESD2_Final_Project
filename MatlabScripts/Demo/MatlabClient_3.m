@@ -131,14 +131,13 @@ flush(client);
 
 % Receive coordinates in 2D array [xLeft,yLeft,xRight,yRight,t][Frame]
 numFrames = read(client, 1, 'uint32');
-xLeft = read(client,numFrames);
-yLeft = read(client,numFrames);
-xRight = read(client,numFrames);
-yRight = read(client,numFrames);
-t = read(client,numFrames);
+xLeft = read(client,numFrames, 'uint32');
+yLeft = read(client,numFrames, 'uint32');
+xRight = read(client,numFrames, 'uint32');
+yRight = read(client,numFrames, 'uint32');
+t = read(client,numFrames, 'uint32');
 
 realDepth = [];
-for 
 
 %Calculate Depths 
 calculatedDepths_t = zeros(1, numFrames);
@@ -156,11 +155,11 @@ for i = 1:numFrames
     calculatedDepths(i) = AdjustedZ;
 
     actualDepths = zeros(size(calculatedDepths));
-    ballData = load(path)
+    ballData = load(path);
 
     % Populate actualDepths using indices from calculatedDepths_t
     for i = 1:length(calculatedDepths_t)
-        t_index = calculatedDepths_t(i);
+        t_index = t(i);
         if t_index <= size(ballData, 1)
             actualDepths(i) = ballData(t_index, 2); % Assumes the depth value is in the second column
         else
