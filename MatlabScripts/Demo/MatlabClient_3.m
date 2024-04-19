@@ -155,6 +155,31 @@ for i = 1:numFrames
     calculatedDepths_t(i) = t(i);
     calculatedDepths(i) = AdjustedZ;
 
+    actualDepths = zeros(size(calculatedDepths));
+    ballData = load(path)
+
+    % Populate actualDepths using indices from calculatedDepths_t
+    for i = 1:length(calculatedDepths_t)
+        t_index = calculatedDepths_t(i);
+        if t_index <= size(ballData, 1)
+            actualDepths(i) = ballData(t_index, 2); % Assumes the depth value is in the second column
+        else
+            error('Index exceeds the number of rows in ballData file.');
+        end
+    end
+
+    % Plotting both depths arrays against t
+    figure; % Create a new figure window
+    plot(calculatedDepths_t, calculatedDepths, '-o', 'DisplayName', 'Calculated Depths');
+    hold on; % Hold on to add another plot in the same figure
+    plot(calculatedDepths_t, actualDepths, '-s', 'DisplayName', 'Actual Depths from File');
+    hold off;
+    
+    % Formatting the graph
+    xlabel('Frame Number (t)');
+    ylabel('Depth');
+    title('Comparison of Calculated Depths and Actual Depths');
+    legend show; % Show legend to identify the plots
 
 
 
