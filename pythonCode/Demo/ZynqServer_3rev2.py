@@ -13,6 +13,12 @@ import struct
 import sys, random
 import ctypes
 import copy
+import TCP_communication as tcp
+
+# CONSTANTS
+STOP_CMD = -1
+#----------------------------------------------------------------------------------------------------------
+
 
 # Open Server
 npSocket = NumpySocket()
@@ -24,40 +30,32 @@ while True:
     # TOP TRANSFER PROTOCOL MANAGEMENT
     cmd = int(npSocket.receiveCmd())  # Await Transfer Protocol cmd
     if cmd == 0: # INIT PARAMETERS
-        # RESET ALL FOR NEW SHOT
-        mode, matchType, shotType = 0, 0, 0  # Reset the following parameter values
+        # Get init parameters from client
+        mode, matchType, shotType = tcp.getInitParameters(npSocket)
 
-        # Get init parameters
-        mode = int(npSocket.receiveParam())
-        matchType = int(npSocket.receiveParam())
-        shotType = int(npSocket.receiveParam())
-        print('Received Parameters')
     elif cmd == 1: # Process Shot
+        # Initialize Variables
         t = 1  # initialize to start of shot
         frame = 0  # current frame counter
         coordinates = np.zeros((5, 0), dtype=int)  # Initialize a 2D array with 5 rows and dynamic columns
+
+        # Process All Frames
         while True:  # While more frames to process
-            # 1. Send request for frame at t
-            request_t = np.array(t, dtype=np.uint32) # Formatting 
-            print("Requesting frame %d at t = %d" % (frame, t))
-            npSocket.send(request_t)
-            
-            # 2. Receive stereoImage for t
-            data = npSocket.receive()
-            stereoImage = np.reshape(data, (480, 752, 8))
-            # Isolate the unique frames
-            ballLeftGray = stereoImage[:, :, 0]
-            ballLeftGray = np.ascontiguousarray(ballLeftGray, dtype=np.uint8) 
-            emptyLeftGray = stereoImage[:, :, 1]
-            emptyLeftGray = np.ascontiguousarray(emptyLeftGray, dtype=np.uint8) 
-            ballRightGray = stereoImage[:, :, 4]
-            ballRightGray = np.ascontiguousarray(ballRightGray, dtype=np.uint8)
-            emptyRightGray = stereoImage[:, :, 5]
-            emptyRightGray = np.ascontiguousarray(emptyRightGray, dtype=np.uint8)
-            if np.all(stereoImage == 0) :
+            # Send request for frame at t
+            tcp.requestFrame(t, frame, npSocket)
+            # Receive frame for t
+            frame_data = tcp.receiveFrame(npSocket)
+            # Access the individual images from frame
+            ballLeftGray = frame_data['ballLeftGray']
+            emptyLeftGray = frame_data['emptyLeftGray']
+            ballRightGray = frame_data['ballRightGray']
+            emptyRightGray = frame_data['emptyRightGray']
+            # If frame is empty, stop processing
+            if np.all(frame_data == 0) :
+                print("All Frames Received")
                 break
-            """
-            # Start Processing timer
+
+            # Start Processing Current Frame
             start_time = time.time()  # start a timer from 0 to track processing time
             
             # 3. Pass through to FPGA
@@ -94,23 +92,21 @@ while True:
             new_coords = np.array([[xLeft], [yLeft], [xRight], [yRight], [t]])
             coordinates = np.hstack((coordinates, new_coords))  # Append new frame data as a new column
 
-            
             # 6. Stereo Calculate X,Y,Z at t
             # IMPLEMENT: TBD
             
             # 7. Update t
             end_time = time.time()
             t += int((end_time - start_time) * 1000)  # Convert processing time to ms
-            """
-            t += 50
             frame += 1  # Increment frame counter
+
         print("Exiting infinite while loop")
         # Calculate Result
         # IMPLEMENT: TBD
         
         # Send Stop Command
-        stopCmd = np.array(-1, dtype=np.uint32) # Formatting 
-        npSocket.send(stopCmd)  # Stop Command: Tell Client to stop sending frames and instead request the result back
+        tcp.sendCMD(STOP_CMD, npSocket)  # Stop Command: Tell Client to stop sending frames and instead request the result back
+
     elif cmd == 2: # Send Results
         if mode == 1:  # Coeff Mode
             pass  # IMPLEMENT: TBD
@@ -120,7 +116,6 @@ while True:
             # Send Coordinate Information
             numFramesMsg = np.array(coordinates.shape[1], dtype=np.uint32)
             npSocket.send(numFramesMsg)
-            
             xLeftMsg = np.ascontiguousarray(coordinates[0, :], dtype=np.uint32)
             yLeftMsg = np.ascontiguousarray(coordinates[1, :], dtype=np.uint32)
             xRightMsg = np.ascontiguousarray(coordinates[2, :], dtype=np.uint32)
@@ -131,6 +126,7 @@ while True:
             npSocket.send(xRightMsg)
             npSocket.send(yRightMsg)
             npSocket.send(tMsg)
+
     else:
         print("Exit Command. Close Server")
         npSocket.close()  # Close Server
