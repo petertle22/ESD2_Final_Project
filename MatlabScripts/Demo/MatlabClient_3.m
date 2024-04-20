@@ -83,7 +83,7 @@ while 1
     errorCode = MoveTennisBall(request, path);
 
     if errorCode == 0 
-        [leftImage, rightImage] = MoveCamera(request, path); 
+        [leftImage, rightImage] = MoveCamera(request, 0); 
 
         % 3. Grayscale Left/Right
         BallLeftGray  = preprocessImage(leftImage);
@@ -129,6 +129,16 @@ end
 write(client,'2'); %Transfer Protocol
 flush(client);
 
+    data = read(client,width*height);   
+    temp = reshape(data,[width,height]);
+    dataProcessed = permute(temp,[2 1]);
+    imageToShow = dataProcessed(:, :, 1);
+    imagesc(imageToShow);
+    colormap gray; % Sets the colormap to gray for better visualization of grayscale images
+    colorbar;  
+    pause(1)
+
+
 % Receive coordinates in 2D array [xLeft,yLeft,xRight,yRight,t][Frame]
 numFrames = read(client, 1, 'uint32');
 xLeft = read(client,numFrames, 'uint32');
@@ -166,23 +176,19 @@ for i = 1:numFrames
             error('Index exceeds the number of rows in ballData file.');
         end
     end
-
-    % Plotting both depths arrays against t
-    figure; % Create a new figure window
-    plot(calculatedDepths_t, calculatedDepths, '-o', 'DisplayName', 'Calculated Depths');
-    hold on; % Hold on to add another plot in the same figure
-    plot(calculatedDepths_t, actualDepths, '-s', 'DisplayName', 'Actual Depths from File');
-    hold off;
-    
-    % Formatting the graph
-    xlabel('Frame Number (t)');
-    ylabel('Depth');
-    title('Comparison of Calculated Depths and Actual Depths');
-    legend show; % Show legend to identify the plots
-
-
-
 end
+% Plotting both depths arrays against t
+figure; % Create a new figure window
+plot(calculatedDepths_t, calculatedDepths, '-o', 'DisplayName', 'Calculated Depths');
+hold on; % Hold on to add another plot in the same figure
+plot(calculatedDepths_t, actualDepths, '-s', 'DisplayName', 'Actual Depths from File');
+hold off;
+
+% Formatting the graph
+xlabel('Frame Number (t)');
+ylabel('Depth');
+title('Comparison of Calculated Depths and Actual Depths');
+legend show; % Show legend to identify the plots
 
 
 %Close Server

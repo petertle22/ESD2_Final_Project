@@ -18,6 +18,7 @@ function [unityImageLeft, unityImageRight] = MoveCamera(time, isWind)
   zShift = 0;
 
   if isWind == 1
+    disp('We have wind')
     windData = load('datFiles/wind.dat');
     xShift = windData(time, 1);
     yShift = windData(time, 2);
