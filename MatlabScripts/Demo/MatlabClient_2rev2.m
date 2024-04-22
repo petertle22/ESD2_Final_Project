@@ -5,17 +5,17 @@
 % CLIENT INITIALIZATION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Image Transfer Dimensions
-width = 752;
-height = 480;
+width = 752.0;
+height = 480.0;
 
 % Initialize the camera intrinsics and extrinsics
-b = 100;          % baseline [mm]
+b = 100.0;          % baseline [mm]
 f = 2.56;         % focal length [mm]
 ps = 0.006;       % pixel size [mm]
-xNumPix = 752;    % total number of pixels in x direction of the sensor [px]
+xNumPix = 752.0;    % total number of pixels in x direction of the sensor [px]
 cxLeft = xNumPix / 2;  % left camera x center [px]
 cxRight = xNumPix / 2; % right camera x center [px]
-cameraHeight = 9; % camera height [m]
+cameraHeight = 9.0; % camera height [m]
 
 % Function to preprocess images (convert to grayscale)
 preprocessImage = @(img) rgb2gray(img);
@@ -113,6 +113,7 @@ while 1
     else
         % 4. Send Left/Right
         %Package all four images
+        disp('Printing zeros')
         imageStack = uint8(ones(height,width,8));
         imageStack(:,:,1) = ones(480, 752) * 0;
         imageStack(:,:,2) = ones(480, 752) * 0;
@@ -138,10 +139,15 @@ flush(client);
 
 % Receive coordinates in 2D array [xLeft,yLeft,xRight,yRight,t][Frame]
 numFrames = read(client, 1, 'uint32');
-xLeft = read(client,numFrames, 'uint32');
-yLeft = read(client,numFrames, 'uint32');
-xRight = read(client,numFrames, 'uint32');
-yRight = read(client,numFrames, 'uint32');
+xLeft = read(client,numFrames, 'double');
+yLeft = read(client,numFrames, 'double');
+xRight = read(client,numFrames, 'double');
+yRight = read(client,numFrames, 'double');
+
+% xLeft = double(xLeft);
+% yLeft = double(yLeft);
+% xRight = double(xRight);
+% yRight = double(yRight);
 t = read(client,numFrames, 'uint32');
 
 realDepth = [];
@@ -153,10 +159,10 @@ calculatedDepths = zeros(1, numFrames);
 differences = zeros(1, numFrames);
 for i = 1:numFrames
     % Calculate depth
-    d = (abs((xLeft(i) - cxLeft) - (xRight(i) - cxRight)) * ps) * 1.0; % disparity [mm]
+    d = (abs((xLeft(i) - cxLeft) - (xRight(i) - cxRight)) * ps); % disparity [mm]
     Z = (b * f) / d; % depth [mm]
-    Z = Z; % Convert depth to meters
-    AdjustedZ(i) = (cameraHeight*1000) - Z;
+    Z = Z/1000; % Convert depth to meters
+    AdjustedZ(i) = cameraHeight - Z;
     
     % Store calculated depth
     calculatedDepths_t(i) = t(i);
@@ -175,10 +181,27 @@ for i = 1:numFrames
         end
     end
 end
+
 % Plotting both depths arrays against t
 figure; % Create a new figure window
+windowSize = 3;
+movingAveragedCalculatedDepths = smooth(calculatedDepths,windowSize);
+movingAveragedT = smooth(calculatedDepths_t, windowSize);
+[Coefficients, Structure] = polyfit(movingAveragedT,movingAveragedCalculatedDepths,2);
+polynomialFunction = @(inputTime) Coefficients(1) * inputTime ^ 2 + Coefficients(2) * inputTime + Coefficients(3);
+
+N = size(movingAveragedT);
+
+polyFit = zeros(1, N(1));
+
+for i = 1 : N(1)
+    polyFit(i) = polynomialFunction(movingAveragedT(i));
+end
+
+hold on
+plot(movingAveragedT, polyFit, '-x', 'DisplayName', 'Moving Averaged PolyFit')
+%plot(movingAveragedT, movingAveragedCalculatedDepths, '-o', 'DisplayName', 'Moving Averaged Calculated Depth' )
 plot(calculatedDepths_t, calculatedDepths, '-o', 'DisplayName', 'Calculated Depths');
-hold on; % Hold on to add another plot in the same figure
 plot(calculatedDepths_t, actualDepths, '-s', 'DisplayName', 'Actual Depths from File');
 hold off;
 
@@ -187,6 +210,7 @@ xlabel('Frame Number (t)');
 ylabel('Depth');
 title('Comparison of Calculated Depths and Actual Depths');
 legend show; % Show legend to identify the plots
+
 
 
 %Close Server
