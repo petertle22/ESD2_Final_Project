@@ -1,4 +1,4 @@
-# ZynqServer_3.py is a simulation of the final implementation EXCLUDING the FPGA Processing.
+# ZynqServer_2rev2.py is a simulation of the the centroid detection algorithm over multiple frames over time 
 # 1. Open Server and await client connection and transfer protocol
 # 2. Respond to transfer protocol requests
 # 3. Reach determination and send STOP Command to client
@@ -47,29 +47,16 @@ while True:
             # Receive frame for t
             frame_data = tcp.receiveFrame(npSocket)
             # Access the individual images from frame
-            ballLeftGray = frame_data['ballLeftGray']
-            emptyLeftGray = frame_data['emptyLeftGray']
-            ballRightGray = frame_data['ballRightGray']
-            emptyRightGray = frame_data['emptyRightGray']
+            processedLeft = frame_data['ballLeftGray']
+            processedRight = frame_data['emptyLeftGray']
             # If frame is empty, stop processing
             #if np.all(frame_data == 0) :
-            if np.all(t >= 250) :
+            if np.all(t > 1700) :
                 print("All Frames Received")
                 break
 
             # Start Processing Current Frame
             start_time = time.time()  # start a timer from 0 to track processing time
-            
-            # 3. Pass through to FPGA
-            FPGA_ENABLE = False
-            if FPGA_ENABLE: 
-                pass  # NO IMPLEMENTATION YET
-            else:
-                processedLeft, processedRight = ball.process_images(ballLeftGray, emptyLeftGray, ballRightGray, emptyRightGray)
-            
-            # 4. Receive processedImage from FPGA
-            if FPGA_ENABLE: 
-                pass  # NO IMPLEMENTATION YET
                 
             # 5. Centroid Detection
             ballFound, xLeft, yLeft = ball.find_centroid(processedLeft)
@@ -87,7 +74,6 @@ while True:
             # 7. Update t
             end_time = time.time()
             t += int((end_time - start_time) * 1000)  # Convert processing time to ms
-            frame += 1  # Increment frame counter
 
         print("Exiting infinite while loop")
         # Calculate Result
@@ -106,40 +92,28 @@ while True:
         else:  # DEBUGGING MODE
             print('DEBUGGING RESULTS')
 
-            # Display Image Processing 
-            fig, axs = plt.subplots(1, 3, figsize=(15, 5))  # 1 row, 3 columns
-            # Plot the first image: ballLeftGray
-            axs[0].imshow(ballLeftGray, cmap='gray')  # cmap='gray' ensures grayscale display
-            axs[0].axis('off')  # Hide the axes
-            axs[0].set_title('Ball Left Gray')
-            # Plot the second image: emptyLeftGray
-            axs[1].imshow(emptyLeftGray, cmap='gray')
-            axs[1].axis('off')
-            axs[1].set_title('Empty Left Gray')
-            # Plot the third image: processedLeft
-            axs[2].imshow(processedLeft, cmap='gray')
-            axs[2].axis('off')
-            axs[2].set_title('Processed Left')
-            plt.show()
-
-            # Send Processed Image for Confirmation
-            sendProduct = np.ascontiguousarray(processedLeft, dtype=np.uint8)
-            npSocket.send(sendProduct)
 
             # Send Coordinate Information
+            print(coordinates.shape[1])
             numFramesMsg = np.array(coordinates.shape[1], dtype=np.uint32)
             npSocket.send(numFramesMsg)
-            xLeftMsg = np.array(coordinates[0, :], dtype=np.uint32)
+            print('Sent Num Frames')
+            xLeftMsg = np.array(coordinates[0, :], dtype=np.double)
             npSocket.send(xLeftMsg)
-            yLeftMsg = np.array(coordinates[1, :], dtype=np.uint32)
+            print('Sent xLeft')
+            yLeftMsg = np.array(coordinates[1, :], dtype=np.double)
             npSocket.send(yLeftMsg)
-            xRightMsg = np.array(coordinates[2, :], dtype=np.uint32)
+            print('Sent yLeft')
+            xRightMsg = np.array(coordinates[2, :], dtype=np.double)
             npSocket.send(xRightMsg)
-            yRightMsg = np.array(coordinates[3, :], dtype=np.uint32)
+            print('Sent xRight')
+            yRightMsg = np.array(coordinates[3, :], dtype=np.double)
             npSocket.send(yRightMsg)
+            print('Sent yRight')
             tMsg = np.array(coordinates[4, :], dtype=np.uint32)
             npSocket.send(tMsg)
-            print(xLeftMsg)
+            #print(xLeftMsg)
+            #print(xRightMsg)
             print(tMsg)
 
     else:
