@@ -72,12 +72,14 @@ while True:
                 pass  # NO IMPLEMENTATION YET
                 
             # 5. Centroid Detection
-            xLeft, yLeft = ball.find_centroid(processedLeft)
-            xRight, yRight = ball.find_centroid(processedRight)
+            ballFound, xLeft, yLeft = ball.find_centroid(processedLeft)
+            ballFound, xRight, yRight = ball.find_centroid(processedRight)
 
             # Append results to coordinates array
-            new_coords = np.array([[xLeft], [yLeft], [xRight], [yRight], [t]])
-            coordinates = np.hstack((coordinates, new_coords))  # Append new frame data as a new column
+            if ((t > 5) and (ballFound)):
+                new_coords = np.array([[xLeft], [yLeft], [xRight], [yRight], [t]])
+                coordinates = np.hstack((coordinates, new_coords))  # Append new frame data as a new column
+                frame += 1  # Increment frame counter
 
             # 6. Stereo Calculate X,Y,Z at t
             # IMPLEMENT: TBD
