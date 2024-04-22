@@ -57,14 +57,16 @@ def find_centroid(binary_image):
             - cy : y-coordinate of centroid pixel.
 
     """
+    # Identfy all possible contours in image
     contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2:]
 
+    # Iterate through all identified contours to find best centroid
     if contours:
         largest_contour = max(contours, key=cv2.contourArea)
         M = cv2.moments(largest_contour)
         if M["m00"] != 0:
-            cx = int(M["m10"] / M["m00"])
-            cy = int(M["m01"] / M["m00"])
+            cx = M["m10"] / M["m00"]
+            cy = M["m01"] / M["m00"]
         else:
             cx, cy = 0, 0  # Centroid not found
         return cx, cy

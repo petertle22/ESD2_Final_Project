@@ -51,7 +51,7 @@ while True:
             processedRight = frame_data['emptyLeftGray']
             # If frame is empty, stop processing
             #if np.all(frame_data == 0) :
-            if np.all(t >= 250) :
+            if np.all(t > 1700) :
                 print("All Frames Received")
                 break
 
@@ -63,8 +63,10 @@ while True:
             xRight, yRight = ball.find_centroid(processedRight)
 
             # Append results to coordinates array
-            new_coords = np.array([[xLeft], [yLeft], [xRight], [yRight], [t]])
-            coordinates = np.hstack((coordinates, new_coords))  # Append new frame data as a new column
+            if (t > 5):
+                new_coords = np.array([[xLeft], [yLeft], [xRight], [yRight], [t]])
+                coordinates = np.hstack((coordinates, new_coords))  # Append new frame data as a new column
+                frame += 1  # Increment frame counter
 
             # 6. Stereo Calculate X,Y,Z at t
             # IMPLEMENT: TBD
@@ -72,7 +74,6 @@ while True:
             # 7. Update t
             end_time = time.time()
             t += int((end_time - start_time) * 1000)  # Convert processing time to ms
-            frame += 1  # Increment frame counter
 
         print("Exiting infinite while loop")
         # Calculate Result
@@ -91,21 +92,28 @@ while True:
         else:  # DEBUGGING MODE
             print('DEBUGGING RESULTS')
 
+
             # Send Coordinate Information
+            print(coordinates.shape[1])
             numFramesMsg = np.array(coordinates.shape[1], dtype=np.uint32)
             npSocket.send(numFramesMsg)
-            xLeftMsg = np.array(coordinates[0, :], dtype=np.uint32)
+            print('Sent Num Frames')
+            xLeftMsg = np.array(coordinates[0, :], dtype=np.double)
             npSocket.send(xLeftMsg)
-            yLeftMsg = np.array(coordinates[1, :], dtype=np.uint32)
+            print('Sent xLeft')
+            yLeftMsg = np.array(coordinates[1, :], dtype=np.double)
             npSocket.send(yLeftMsg)
-            xRightMsg = np.array(coordinates[2, :], dtype=np.uint32)
+            print('Sent yLeft')
+            xRightMsg = np.array(coordinates[2, :], dtype=np.double)
             npSocket.send(xRightMsg)
-            yRightMsg = np.array(coordinates[3, :], dtype=np.uint32)
+            print('Sent xRight')
+            yRightMsg = np.array(coordinates[3, :], dtype=np.double)
             npSocket.send(yRightMsg)
+            print('Sent yRight')
             tMsg = np.array(coordinates[4, :], dtype=np.uint32)
             npSocket.send(tMsg)
-            print(xLeftMsg)
-            print(xRightMsg)
+            #print(xLeftMsg)
+            #print(xRightMsg)
             print(tMsg)
 
     else:
