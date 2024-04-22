@@ -72,7 +72,7 @@ flush(client);
 while 1
 
     % 1. Wait for request from server (t value), exit if special value
-    request = read(client, 1, 'uint32')
+    request = read(client, 1, 'uint32');
     request
     if request == 99999
         break
@@ -90,18 +90,23 @@ while 1
         BallRightGray = preprocessImage(rightImage);
 
         % 4. Perform Background Subtraction and binarization
+        % Background Subtraction
+        diffLeft = imsubtract(BallLeftGray, emptyLeftGray);
+        diffRight = imsubtract(BallRightGray, emptyRightGray);
+        % Binarize the image
+        threshold = graythresh(diffLeft); % Determine the best threshold
+        binaryLeft = imbinarize(diffLeft, threshold);
+        binaryRight = imbinarize(diffRight, threshold);
+        % Convert binary image to uint8
+        processedLeft = uint8(binaryLeft * 255); % Convert logical to uint8 by multiply
+        processedRight = uint8(binaryRight * 255); % Convert logical to uint8 by multiply
+
         
         % 4. Send Left/Right
-        %Package all four images
+        %Package the two processed images
         imageStack = uint8(ones(height,width,8));
-        imageStack(:,:,1) = BallLeftGray;
-        imageStack(:,:,2) = emptyLeftGray;
-        imageStack(:,:,3) = BallLeftGray;
-        imageStack(:,:,4) = emptyLeftGray;
-        imageStack(:,:,5) = BallRightGray;
-        imageStack(:,:,6) = emptyRightGray;
-        imageStack(:,:,7) = BallRightGray;
-        imageStack(:,:,8) = emptyRightGray;
+        imageStack(:,:,1) = processedLeft;
+        imageStack(:,:,2) = processedRight;
 
         imageStack = permute(imageStack,[3 2 1]);
         write(client,imageStack(:)); %SEND
@@ -130,16 +135,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 write(client,'2'); %Transfer Protocol
 flush(client);
-
-    data = read(client,width*height);   
-    temp = reshape(data,[width,height]);
-    dataProcessed = permute(temp,[2 1]);
-    imageToShow = dataProcessed(:, :, 1);
-    imagesc(imageToShow);
-    colormap gray; % Sets the colormap to gray for better visualization of grayscale images
-    colorbar;  
-    pause(1)
-
 
 % Receive coordinates in 2D array [xLeft,yLeft,xRight,yRight,t][Frame]
 numFrames = read(client, 1, 'uint32');
