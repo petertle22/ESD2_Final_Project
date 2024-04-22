@@ -147,19 +147,20 @@ t = read(client,numFrames, 'uint32');
 realDepth = [];
 
 %Calculate Depths 
+AdjustedZ = zeros(1, numFrames);
 calculatedDepths_t = zeros(1, numFrames);
 calculatedDepths = zeros(1, numFrames);
 differences = zeros(1, numFrames);
 for i = 1:numFrames
     % Calculate depth
-    d = abs((xLeft(i) - cxLeft) - (xRight(i) - cxRight)) * ps; % disparity [mm]
+    d = (abs((xLeft(i) - cxLeft) - (xRight(i) - cxRight)) * ps) * 1.0; % disparity [mm]
     Z = (b * f) / d; % depth [mm]
-    Z = Z / 1000; % Convert depth to meters
-    AdjustedZ = cameraHeight - Z;
+    Z = Z; % Convert depth to meters
+    AdjustedZ(i) = (cameraHeight*1000) - Z;
     
     % Store calculated depth
     calculatedDepths_t(i) = t(i);
-    calculatedDepths(i) = AdjustedZ;
+    calculatedDepths(i) = AdjustedZ(i);
 
     actualDepths = zeros(size(calculatedDepths));
     ballData = load(path);
