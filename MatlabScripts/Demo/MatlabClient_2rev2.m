@@ -89,6 +89,8 @@ while 1
         BallLeftGray  = preprocessImage(leftImage);
         BallRightGray = preprocessImage(rightImage);
 
+        % 4. Perform Background Subtraction and binarization
+        
         % 4. Send Left/Right
         %Package all four images
         imageStack = uint8(ones(height,width,8));
