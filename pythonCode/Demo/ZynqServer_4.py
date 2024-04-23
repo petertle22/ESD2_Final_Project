@@ -22,7 +22,7 @@ RESULTS_CMD = 2
 MODE_COEFF = 1
 MODE_IN_OUT = 2
 
-FRAME_REQUEST_TIMEOUT = 2000
+FRAME_REQUEST_TIMEOUT = 150
 #----------------------------------------------------------------------------------------------------------
 
 # Open Server
@@ -56,7 +56,7 @@ while True:
             processedLeft = frame_data['ballLeftGray']
             processedRight = frame_data['emptyLeftGray']
             # If frame is empty, stop processing
-            if np.all(t > FRAME_REQUEST_TIMEOUT) :
+            if np.all(frame_data == 0) or np.all(t > FRAME_REQUEST_TIMEOUT) :
                 print("All Frames Received")
                 break
 

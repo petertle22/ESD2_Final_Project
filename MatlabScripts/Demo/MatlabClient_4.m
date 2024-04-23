@@ -19,7 +19,7 @@ emptyRightGray = preprocessImage(emptyRightImage);
 
 
 %Connect to sever
-server_ip   = '129.21.40.218';     % IP address of the server -NEEDS CHANGE
+server_ip   = '129.21.91.215';     % IP address of the server -NEEDS CHANGE
 
 % NO CHNAGE
 server_port = 9999;                % Server Port of the sever
@@ -158,7 +158,7 @@ hold on;  % Hold on to add multiple plots
 % Plot real coordinates
 plot3(real_X, real_Y, real_Z, 'bo', 'MarkerFaceColor', 'blue', 'DisplayName', 'Real Coordinates');
 % Plot calculated coordinates
-plot3(calc_X, calc_Y, calc_Z, 'ro', 'MarkerFaceColor', 'red', 'DisplayName', 'Calculated Coordinates');
+plot3(calc_X, calc_Z, calc_Y, 'ro', 'MarkerFaceColor', 'red', 'DisplayName', 'Calculated Coordinates');
 
 % Label Plot
 grid on;  % Enable grid

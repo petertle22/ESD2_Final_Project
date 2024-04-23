@@ -103,20 +103,18 @@ def calcStereoXYZ(xLeft, yLeft, xRight, yRight):
     CAM_XNUMPIX = 752.0 # total number of pixels in x direction of the sensor [px]
     CAM_CXLEFT = CAM_XNUMPIX / 2 # left camera x center [px]
     CAM_CXRIGHT = CAM_XNUMPIX / 2 # right camera x center [px]
-    CAM_HEIGHT = 9000.0 # camera height [mm]
+    CAM_YNUMPIX = 480;
+    CAM_CYLEFT = CAM_YNUMPIX / 2
+    CAM_CYRIGHT = CAM_YNUMPIX / 2
+    CAM_HEIGHT = 9.0 # camera height [m]
 
     # Calculate Z
     disparity = (abs((xLeft - CAM_CXLEFT) - (xRight - CAM_CXRIGHT)) * CAM_PS) # disparity [mm]
     depth = (CAM_B * CAM_F) / disparity # depth [mm]
     Z = CAM_HEIGHT - depth # Centroid's height off of the ground [mm]
 
-    # Calculate X position using average x-coordinate transformed to center
-    x_average = ((xLeft + xRight) / 2.0) - CAM_CXLEFT
-    X = (x_average * CAM_PS) * (depth / CAM_F) # Transform the average to real world coordinates
-
-    # Calculate Y position using yLeft (assuming yLeft and yRight are similar as they should be for the same object)
-    y_average = (yLeft + yRight) / 2.0
-    Y = ((CAM_XNUMPIX / 2 - y_average) * CAM_PS) * (depth / CAM_F) # Correct the Y calculation to account for positive upwards
+    X = Z * (xLeft - CAM_CXLEFT) * CAM_PS / CAM_F;
+    Y = Z * (yLeft - CAM_CYLEFT) * CAM_PS / CAM_F - CAM_B / 2;
 
     # Convert to Meters
     X = X / 1000
