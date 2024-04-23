@@ -35,8 +35,8 @@ def process_images(ballLeftGray, emptyLeftGray, ballRightGray, emptyRightGray):
     _, processedRight = cv2.threshold(diffRight, 10, 255, cv2.THRESH_BINARY)
 
     # Convert images to uint8 if necessary
-    #processedLeft = np.uint8(processedLeft)
-    #processedRight = np.uint8(processedRight)
+    processedLeft = np.uint8(processedLeft)
+    processedRight = np.uint8(processedRight)
 
     return processedLeft, processedRight
 
@@ -52,7 +52,7 @@ def find_centroid(binary_image):
 
     Returns
     -------
-         tuple: A tuple containing three values:
+        tuple: A tuple containing three values:
             - ballFound : boolean for if a centroid was detected
             - cx : x-coordinate of centroid pixel.
             - cy : y-coordinate of centroid pixel.
@@ -75,3 +75,89 @@ def find_centroid(binary_image):
         return ballFound, cx, cy
     else:
         return False, 0, 0  # No contours found
+    
+def calcStereoXYZ(xLeft, yLeft, xRight, yRight):
+    """
+    Given x,y centroid pixel coordinates from a stereo camera, return the Z,Y,Z position in 3D space of the centroid
+
+    Parameters
+    ----------
+        xLeft : The x-coordinate of the centroid from the left camera perspective
+        yLeft : The y-coordinate of the centroid from the left camera perspective
+        xRight : The x-coordinate of the centroid from the right camera perspective
+        yRight : The y-coordinate of the centroid from the right camera perspective
+
+
+    Returns
+    -------
+        tuple: A tuple containing three values:
+            - X : ball's X position [m] in 3D Space
+            - Y : ball's Y position [m] in 3D Space
+            - Z : ball's Z position [m] in 3D Space
+
+    """
+    # CONSTANTS
+    CAM_B = 100.0 # baseline [mm]
+    CAM_F = 2.56 # focal length [mm]
+    CAM_PS = 0.006 # pixel size [mm]
+    CAM_XNUMPIX = 752.0 # total number of pixels in x direction of the sensor [px]
+    CAM_CXLEFT = CAM_XNUMPIX / 2 # left camera x center [px]
+    CAM_CXRIGHT = CAM_XNUMPIX / 2 # right camera x center [px]
+    CAM_HEIGHT = 9000.0 # camera height [mm]
+
+    # Calculate Z
+    disparity = (abs((xLeft - CAM_CXLEFT) - (xRight - CAM_CXRIGHT)) * CAM_PS) # disparity [mm]
+    depth = (CAM_B * CAM_F) / disparity # depth [mm]
+    Z = CAM_HEIGHT - depth # Centroid's height off of the ground [mm]
+
+    # Calculate X position using average x-coordinate transformed to center
+    x_average = ((xLeft + xRight) / 2.0) - CAM_CXLEFT
+    X = (x_average * CAM_PS) * (depth / CAM_F) # Transform the average to real world coordinates
+
+    # Calculate Y position using yLeft (assuming yLeft and yRight are similar as they should be for the same object)
+    y_average = (yLeft + yRight) / 2.0
+    Y = ((CAM_XNUMPIX / 2 - y_average) * CAM_PS) * (depth / CAM_F) # Correct the Y calculation to account for positive upwards
+
+    # Convert to Meters
+    X = X / 1000
+    Y = Y / 1000
+    Z = Z / 1000
+
+    return X, Y, Z
+    
+def findBounceT():
+    """
+    Given
+
+    Parameters
+    ----------
+        
+
+    Returns
+    -------
+         
+
+    """
+    pass
+
+def findEstimatedValue(positionArray, tUsedArray, estimatedTimeBallHitsGround, order = 1):
+    """
+    Using a polyfit, this function estimates the X,Y, or Z value at a certain time value given an array 
+    of known positions at each frame
+
+    Parameters
+    ----------
+        positionArray : An array of X,Y, or Z values at a given frame
+        tUsedArray : An array of corresponding time values used at each frame
+        estimatedTimeBallHitsGround : A time value that the X,Y, or Z position will be stimated at
+        order : The order of the polyfit function found (1 by default)
+
+
+    Returns
+    -------
+         np value : The estimated X, Y, or Z coordinate at the given t
+
+    """
+    coefficients = np.polyfit(tUsedArray, positionArray, order)
+
+    return np.polyval(coefficients, estimatedTimeBallHitsGround)

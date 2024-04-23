@@ -1,0 +1,19 @@
+Python Server Files
+  1. IN_PROGRESS - Create ZynqServer_4
+  2. IN_PROGRESS - WindShift fix B
+    - Use the previous frame with ball to put a mask over the located ball and use that as your background subtraction background
+
+________________________________________________________________________________________
+FPGA/VHDL Work
+  1. IN_PROGRESS - Add noShift Implementation into ZynqServer_4
+
+________________________________________________________________________________________
+GUI
+  1. IN_PROGRESS - Create GUI with initial parameter passing
+  2. IN_PROGRESS - Add Results/Instant Replay display
+
+________________________________________________________________________________________
+Matlab Client Files
+  1. IN_PROGRESS - Create MatlabClient_4
+
+________________________________________________________________________________________

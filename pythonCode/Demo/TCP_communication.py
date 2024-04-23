@@ -80,6 +80,7 @@ def sendCMD(cmd, npSocket):
 
     This function takes a command, formats it as an unsigned 32-bit integer, and sends
     it to the connected socket.
+
     Parameters
     ----------
     cmd : int
@@ -93,3 +94,65 @@ def sendCMD(cmd, npSocket):
     """
     cmd_msg = np.array(cmd, dtype=np.uint32)  # Formatting
     npSocket.send(cmd_msg)
+
+def sendBallXYZ(ballPositionXYZ, npSocket):
+    """
+    Sends a ball's XYZ position [mm] in 3D space over a set of frames in the following format:
+    Send numFrames : 1, uint32
+    Send X values  : numFrames, double
+    Send Y values  : numFrames, double
+    Send Z values  : numFrames, double
+    Send t values  : numFrames, uint32
+
+    Parameters
+    ----------
+    ballPositionXYZ : 2D array with 4 rows and numFrames columns
+        The XYZ,t ball inofrmation to be sent to the client
+    npSocket : socket object
+        The socket connection over which the message is sent.
+
+    Returns
+    -------
+    None
+    """
+    numFramesMsg = np.array(ballPositionXYZ.shape[1], dtype=np.uint32)
+    npSocket.send(numFramesMsg)
+
+    X_msg = np.array(ballPositionXYZ[0, :], dtype=np.double)
+    npSocket.send(X_msg)
+
+    Y_msg = np.array(ballPositionXYZ[1, :], dtype=np.double)
+    npSocket.send(Y_msg)
+
+    Z_msg = np.array(ballPositionXYZ[2, :], dtype=np.double)
+    npSocket.send(Z_msg)
+    
+    tMsg = np.array(ballPositionXYZ[3, :], dtype=np.uint32)
+    npSocket.send(tMsg)
+
+def sendResult(mode, result, npSocket):
+    """
+    Depending on the requested mode, sends a final determination to the client
+
+    Parameters
+    ----------
+    mode : int
+        The mode that the result is correlated to (1 = Coeff Mode, 2 = In/Out Mode)
+    result : double
+        Simple determination (ie. coefficient of restitution or In/Out)
+    ballPositionXYZ : 2D array with 4 rows and numFrames columns
+        The XYZ,t ball inofrmation to be sent to the client
+    npSocket : socket object
+        The socket connection over which the message is sent.
+
+    Returns
+    -------
+    None
+    """
+    # Notify client which type of result this is
+    result_msg = np.array(mode, dtype=np.uint32)  # Formatting
+    npSocket.send(mode)
+
+    # Just send coefficient of restitution
+    result_msg = np.array(result, dtype=np.double)  # Formatting
+    npSocket.send(result_msg)
