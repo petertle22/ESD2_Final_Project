@@ -180,3 +180,32 @@ def findEstimatedValue(positionArray, tUsedArray, estimatedTimeBallHitsGround, o
     return np.polyval(coefficients, estimatedTimeBallHitsGround)
 
 
+import numpy as np
+
+def findBounceT(calculatedDepths, tUsed):
+    # Step 1: Fit a polynomial to the data
+    # We choose a polynomial of degree 2 (quadratic) which generally suits the parabolic motion of a bounce.
+    # We might need to adjust the degree based on the specific characteristics of the data.
+    coefficients = np.polyfit(tUsed, calculatedDepths, 2)
+
+    # Step 2: Create a polynomial from the coefficients
+    p = np.poly1d(coefficients)
+
+    # Step 3: Find the roots of the polynomial where the depth will be zero
+    roots = p.roots
+
+    # Step 4: Filter roots to find the correct one that comes after the initial depth
+    valid_roots = [root for root in roots if root.imag == 0 and root.real >= min(tUsed)]
+
+    # Step 5: Choose the smallest valid root that occurs after the start
+    if valid_roots:
+        return min(valid_roots).real
+    else:
+        return None
+
+# Example usage
+
+
+bounce_time = findBounceT(calculatedDepths, tUsed)
+print(f"Estimated time of bounce: {bounce_time} seconds")
+
