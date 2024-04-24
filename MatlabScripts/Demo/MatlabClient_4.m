@@ -85,7 +85,7 @@ while 1
         diffLeft = imsubtract(BallLeftGray, emptyLeftGray);
         diffRight = imsubtract(BallRightGray, emptyRightGray);
         % Binarize the image
-        threshold = 0.11 %graythresh(diffLeft); % Determine the best threshold
+        threshold = 0.11; %graythresh(diffLeft); % Determine the best threshold
         binaryLeft = imbinarize(diffLeft, threshold);
         binaryRight = imbinarize(diffRight, threshold);
         % Convert binary image to uint8
@@ -204,7 +204,6 @@ title('Comparison of Calculated and Real Z Positions Over Time');
 xlabel('Time');
 ylabel('Z Position');
 grid on;
-
 
 
 write(client,'9999');
