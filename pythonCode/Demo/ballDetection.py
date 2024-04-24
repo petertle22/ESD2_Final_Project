@@ -114,7 +114,7 @@ def calcStereoXYZ(xLeft, yLeft, xRight, yRight):
     Z = CAM_HEIGHT - depth # Centroid's height off of the ground [mm]
 
     X = Z * (xLeft - CAM_CXLEFT) * CAM_PS / CAM_F;
-    Y = Z * (yLeft - CAM_CYLEFT) * CAM_PS / CAM_F - CAM_B / 2;
+    Y = Z * (yLeft - CAM_CYLEFT) * CAM_PS / CAM_F + CAM_B / 2;
 
     # Convert to Meters
     X = X / 1000

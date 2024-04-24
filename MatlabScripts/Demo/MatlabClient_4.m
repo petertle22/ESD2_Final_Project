@@ -101,6 +101,7 @@ while 1
 
         imageStack = permute(imageStack,[3 2 1]);
         write(client,imageStack(:)); %SEND
+        flush(client);
     else
         % 4. Send Left/Right
         %Package all four images
@@ -117,6 +118,7 @@ while 1
 
         imageStack = permute(imageStack,[3 2 1]);
         write(client,imageStack(:)); %SEND
+        flush(client);
         break
     end
 
@@ -134,7 +136,7 @@ calc_X = read(client, numFrames, 'double');
 calc_Y = read(client, numFrames, 'double');
 calc_Z = read(client, numFrames, 'double');
 t = read(client, numFrames, 'uint32');
-
+disp('here')
 % Get real X,Y,Z positions at t
 real_X = zeros(size(calc_X));
 real_Y = zeros(size(calc_Y));
