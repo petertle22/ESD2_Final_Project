@@ -51,7 +51,7 @@ while True:
             processedRight = frame_data['emptyLeftGray']
             # If frame is empty, stop processing
             #if np.all(frame_data == 0) :
-            if np.all(t > 1700) :
+            if np.all(t > 400) :
                 print("All Frames Received")
                 break
 
@@ -112,8 +112,8 @@ while True:
             print('Sent yRight')
             tMsg = np.array(coordinates[4, :], dtype=np.uint32)
             npSocket.send(tMsg)
-            #print(xLeftMsg)
-            #print(xRightMsg)
+            print(xLeftMsg)
+            print(xRightMsg)
             print(tMsg)
 
     else:

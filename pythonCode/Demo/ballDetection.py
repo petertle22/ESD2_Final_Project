@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import matplotlib as plt
 
 def process_images(ballLeftGray, emptyLeftGray, ballRightGray, emptyRightGray):
     """
@@ -103,25 +104,43 @@ def calcStereoXYZ(xLeft, yLeft, xRight, yRight):
     CAM_XNUMPIX = 752.0 # total number of pixels in x direction of the sensor [px]
     CAM_CXLEFT = CAM_XNUMPIX / 2 # left camera x center [px]
     CAM_CXRIGHT = CAM_XNUMPIX / 2 # right camera x center [px]
-    CAM_YNUMPIX = 480;
+    CAM_YNUMPIX = 480
     CAM_CYLEFT = CAM_YNUMPIX / 2
     CAM_CYRIGHT = CAM_YNUMPIX / 2
-    CAM_HEIGHT = 9.0 # camera height [m]
+    CAM_HEIGHT = 9000.0 # camera height [mm]
 
     # Calculate Z
     disparity = (abs((xLeft - CAM_CXLEFT) - (xRight - CAM_CXRIGHT)) * CAM_PS) # disparity [mm]
     depth = (CAM_B * CAM_F) / disparity # depth [mm]
+
+    X = depth * (xLeft - CAM_CXLEFT) * CAM_PS / CAM_F + CAM_B / 2
+    Y = depth * (yLeft - CAM_CYLEFT) * CAM_PS / CAM_F
     Z = CAM_HEIGHT - depth # Centroid's height off of the ground [mm]
 
-    X = Z * (xLeft - CAM_CXLEFT) * CAM_PS / CAM_F;
-    Y = Z * (yLeft - CAM_CYLEFT) * CAM_PS / CAM_F + CAM_B / 2;
-
     # Convert to Meters
-    X = X / 1000
-    Y = Y / 1000
+    X = -(X / 1000)
+    Y = -(Y / 1000)
     Z = Z / 1000
 
     return X, Y, Z
+
+def filterStereoXYZ(ballPositionXYZ_RAW):
+    """
+    Filter the ball position data based on Z coordinate constraints and update the number of frames.
+
+    Parameters
+    ----------
+
+
+    Returns
+    -------
+
+    """
+
+    # Check which columns have Z values within the acceptable range
+
+
+    return ballPositionXYZ
     
 def findBounceT():
     """
@@ -159,3 +178,5 @@ def findEstimatedValue(positionArray, tUsedArray, estimatedTimeBallHitsGround, o
     coefficients = np.polyfit(tUsedArray, positionArray, order)
 
     return np.polyval(coefficients, estimatedTimeBallHitsGround)
+
+

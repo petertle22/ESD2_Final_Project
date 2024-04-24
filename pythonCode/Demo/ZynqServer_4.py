@@ -22,7 +22,7 @@ RESULTS_CMD = 2
 MODE_COEFF = 1
 MODE_IN_OUT = 2
 
-FRAME_REQUEST_TIMEOUT = 2000
+FRAME_REQUEST_TIMEOUT = 400
 #----------------------------------------------------------------------------------------------------------
 
 # Open Server
@@ -45,6 +45,9 @@ while True:
         t = 1  # initialize to start of shot
         frame = 0  # current frame counter
         ballPositionXYZ = np.zeros((4, 0), dtype=int)  # Initialize a 2D array with 4 rows and dynamic columns
+        # SPEED OPTIMIZATION
+        dummyFrame = np.zeros((480, 752), dtype=np.uint8)  # Initialize a 2D array with 4 rows and dynamic columns
+        _, _, _ = ball.find_centroid(dummyFrame)
 
         # Process All Frames
         while True:  # While more frames to process
@@ -56,7 +59,7 @@ while True:
             processedLeft = frame_data['ballLeftGray']
             processedRight = frame_data['emptyLeftGray']
             # If frame is empty, stop processing
-            if np.all(processedLeft == 0) or t > FRAME_REQUEST_TIMEOUT:
+            if t > FRAME_REQUEST_TIMEOUT:
                 print("All Frames Received")
                 break
 
@@ -76,14 +79,15 @@ while True:
             
             # 7. Update t
             end_time = time.time()
-            #t += int((end_time - start_time) * 1000)  # Convert processing time to ms
-            t += 200
+
+            t += int((end_time - start_time) * 1000)  # Convert processing time to ms
+
 
         # All Frames Processed
         print("Exiting process frames loop")
         resultsReady = True
         tcp.sendCMD(STOP_CMD, npSocket)  # Stop Command: Tell Client to stop sending frames and instead request the result back
-        print('sent Stop CMD')
+        print('Sent Stop CMD')
 
     elif cmd == RESULTS_CMD: # Send Results
         print('Results Requested...')
@@ -96,8 +100,9 @@ while True:
             else:  # DEBUGGING MODE
                 print('DEBUGGING RESULTS')
                 # Send XYZ over t Information
+                #ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
                 tcp.sendBallXYZ(ballPositionXYZ, npSocket)
-            
+        
             print('Results Sent')
         else :
             print('Results Not Valid')
