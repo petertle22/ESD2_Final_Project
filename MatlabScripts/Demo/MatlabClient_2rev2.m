@@ -28,7 +28,7 @@ emptyRightGray = preprocessImage(emptyRightImage);
 
 
 %Connect to sever
-server_ip   = '129.21.40.218';     % IP address of the server -NEEDS CHANGE
+server_ip   = '129.21.41.4';     % IP address of the server -NEEDS CHANGE
 
 % NO CHNAGE
 server_port = 9999;                % Server Port of the sever
@@ -94,7 +94,7 @@ while 1
         diffLeft = imsubtract(BallLeftGray, emptyLeftGray);
         diffRight = imsubtract(BallRightGray, emptyRightGray);
         % Binarize the image
-        threshold = graythresh(diffLeft); % Determine the best threshold
+        threshold = 0.11; % graythresh(diffLeft)  Determine the best threshold
         binaryLeft = imbinarize(diffLeft, threshold);
         binaryRight = imbinarize(diffRight, threshold);
         % Convert binary image to uint8
@@ -182,9 +182,13 @@ for i = 1:numFrames
     end
 end
 
+
 % Plotting both depths arrays against t
 figure; % Create a new figure window
 windowSize = 3;
+calculatedDepths = calculatedDepths(5:85);
+calculatedDepths_t = calculatedDepths_t(5:85);
+actualDepths = actualDepths(5:85);
 movingAveragedCalculatedDepths = smooth(calculatedDepths,windowSize);
 movingAveragedT = smooth(calculatedDepths_t, windowSize);
 [Coefficients, Structure] = polyfit(movingAveragedT,movingAveragedCalculatedDepths,2);

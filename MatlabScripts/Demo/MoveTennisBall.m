@@ -7,7 +7,7 @@ function errorCode = moveTennisBall(time, pathToDatFile)
     addpath(genpath('../src'))
 
     %Initialization Parameters
-    server_ip   = '129.21.91.215';     %IP address of the Unity Server
+    server_ip   = '129.21.151.125';     %IP address of the Unity Server
     server_port = 55001;               %Server Port of the Unity Sever
     client = tcpclient(server_ip,server_port);
     fprintf(1,"Connected to server\n");
