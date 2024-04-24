@@ -19,7 +19,7 @@ emptyRightGray = preprocessImage(emptyRightImage);
 
 
 %Connect to sever
-server_ip   = '129.21.91.215';     % IP address of the server -NEEDS CHANGE
+server_ip   = '129.21.41.4';     % IP address of the server -NEEDS CHANGE
 
 % NO CHNAGE
 server_port = 9999;                % Server Port of the sever
@@ -85,7 +85,7 @@ while 1
         diffLeft = imsubtract(BallLeftGray, emptyLeftGray);
         diffRight = imsubtract(BallRightGray, emptyRightGray);
         % Binarize the image
-        threshold = graythresh(diffLeft); % Determine the best threshold
+        threshold = 0.11 %graythresh(diffLeft); % Determine the best threshold
         binaryLeft = imbinarize(diffLeft, threshold);
         binaryRight = imbinarize(diffRight, threshold);
         % Convert binary image to uint8
@@ -137,46 +137,74 @@ calc_Y = read(client, numFrames, 'double');
 calc_Z = read(client, numFrames, 'double');
 t = read(client, numFrames, 'uint32');
 disp('here')
-% Get real X,Y,Z positions at t
-real_X = zeros(size(calc_X));
-real_Y = zeros(size(calc_Y));
-real_Z = zeros(size(calc_Z));
-ballData = load(path);
+
 for i = 1:numFrames
-    % Populate real XYZ using t as indices
-    if t(i) <= size(ballData, 1)
-        real_X(i) = ballData(t(i), 1);
-        real_Y(i) = ballData(t(i), 2);
-        real_Z(i) = ballData(t(i), 3);
-    else
-        error('Index exceeds the number of rows in ballData file.');
+    real_X = zeros(size(calc_X));
+    real_Y = zeros(size(calc_X));
+    real_Z = zeros(size(calc_X));
+    ballData = load(path);
+
+    % Populate actualDepths using indices from calculatedDepths_t
+    for i = 1:length(t)
+        t_index = t(i);
+        if t_index <= size(ballData, 1)
+            real_X(i) = ballData(t_index, 3);
+            real_Y(i) = ballData(t_index, 1);
+            real_Z(i) = ballData(t_index, 2);
+        else
+            error('Index exceeds the number of rows in ballData file.');
+        end
     end
 end
 
-% Plotti the real and calculated 3D coordinates
+% Plot 3D coordinates
 figure;
-hold on;  % Hold on to add multiple plots
-
-% Plot real coordinates
-plot3(real_X, real_Y, real_Z, 'bo', 'MarkerFaceColor', 'blue', 'DisplayName', 'Real Coordinates');
-% Plot calculated coordinates
-plot3(calc_X, calc_Z, calc_Y, 'ro', 'MarkerFaceColor', 'red', 'DisplayName', 'Calculated Coordinates');
-
-% Label Plot
-grid on;  % Enable grid
-xlabel('X Axis');  % Label X-axis
-ylabel('Y Axis');  % Label Y-axis
-zlabel('Z Axis');  % Label Z-axis
-title('Comparison of Real and Calculated 3D Coordinates');  % Add title
-legend show;  % Display legend
-
-% Setting axis properties for better visualization
-axis equal;  % Equal scaling
-view(3);  % Default 3D view
-rotate3d on;  % Enable rotation of plot using mouse
-
-hold off;  % Release the plot hold
+plot3(calc_X, calc_Y, calc_Z, 'ro'); % Plot calculated positions in red
+hold on;
+plot3(real_X, real_Y, real_Z, 'bo'); % Plot real positions in blue
+legend('Calculated Position', 'Real Position');
+title('3D Plot of Real and Calculated Positions');
+xlabel('X Position');
+ylabel('Y Position');
+zlabel('Z Position');
+grid on;
 
 
-%Close Server
+% Plot X coordinate
+figure;
+plot(t, calc_X, 'r'); % Plot calculated X positions in red
+hold on;
+plot(t, real_X, 'b'); % Plot real X positions in blue
+legend('Calculated X', 'Real X');
+title('Comparison of Calculated and Real X Positions Over Time');
+xlabel('Time');
+ylabel('X Position');
+grid on;
+
+
+% Plot Y coordinate
+figure;
+plot(t, calc_Y, 'r'); % Plot calculated Y positions in red
+hold on;
+plot(t, real_Y, 'b'); % Plot real Y positions in blue
+legend('Calculated Y', 'Real Y');
+title('Comparison of Calculated and Real Y Positions Over Time');
+xlabel('Time');
+ylabel('Y Position');
+grid on;
+
+
+% Plot Z coordinate
+figure;
+plot(t, calc_Z, 'r'); % Plot calculated Z positions in red
+hold on;
+plot(t, real_Z, 'b'); % Plot real Z positions in blue
+legend('Calculated Z', 'Real Z');
+title('Comparison of Calculated and Real Z Positions Over Time');
+xlabel('Time');
+ylabel('Z Position');
+grid on;
+
+
+
 write(client,'9999');
