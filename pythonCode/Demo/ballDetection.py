@@ -126,23 +126,37 @@ def calcStereoXYZ(xLeft, yLeft, xRight, yRight):
 
 def filterStereoXYZ(ballPositionXYZ_RAW):
     """
-    Filter the ball position data based on Z coordinate constraints and update the number of frames.
+    Filter the ball position data based on Z coordinate constraints.
+    Removes any columns from the array where Z < 0 or Z > 9.
 
     Parameters
     ----------
-
+    ballPositionXYZ_RAW : np.ndarray
+        A 2D NumPy array where each column represents a frame and rows represent X, Y, Z, T values respectively.
 
     Returns
     -------
-
+    np.ndarray
+        A filtered 2D NumPy array containing only the columns where the Z value is between 0 and 9 inclusive.
     """
+    # Create a list to hold columns that pass the filter
+    valid_columns = []
 
-    # Check which columns have Z values within the acceptable range
+    # Iterate over each column (frame) in the array
+    for i in range(ballPositionXYZ_RAW.shape[1]):
+        if (0 <= ballPositionXYZ_RAW[2, i]) and (ballPositionXYZ_RAW[2, i] <= 8):
+            valid_columns.append(ballPositionXYZ_RAW[:, i])
 
+    # Convert the list of arrays back into a 2D NumPy array
+    if valid_columns:
+        ballPositionXYZ = np.column_stack(valid_columns)
+    else:
+        # If no valid columns, return an empty array with the same number of rows and zero columns
+        ballPositionXYZ = np.empty((ballPositionXYZ_RAW.shape[0], 0))
 
-    pass
+    return ballPositionXYZ
     
-def findBounceT():
+def findBounceT(ballPositionXYZ):
     """
     Given
 
@@ -155,7 +169,36 @@ def findBounceT():
          
 
     """
-    pass
+    calculatedDepths = ballPositionXYZ[2, :]
+    t = ballPositionXYZ[3, :]
+
+    index = 0
+    for depth in calculatedDepths:
+        if depth <= 0.2:
+            # Cut both arrays at this index (including this index)
+            calculatedDepths = calculatedDepths[:index + 1]
+            t = t[:index + 1]
+        index += 1
+
+    # Step 1: Fit a polynomial to the data
+    # We choose a polynomial of degree 2 (quadratic) which generally suits the parabolic motion of a bounce.
+    # We might need to adjust the degree based on the specific characteristics of the data.
+    coefficients = np.polyfit(t, calculatedDepths, 2)
+
+    # Step 2: Create a polynomial from the coefficients
+    p = np.poly1d(coefficients)
+
+    # Step 3: Find the roots of the polynomial where the depth will be zero
+    roots = p.roots
+
+    # Step 4: Filter roots to find the correct one that comes after the initial depth
+    valid_roots = [root for root in roots if root.imag == 0 and root.real >= min(t)]
+
+    # Step 5: Choose the smallest valid root that occurs after the start
+    if valid_roots:
+        return min(valid_roots).real
+    else:
+        return None
 
 def findEstimatedValue(positionArray, tUsedArray, estimatedTimeBallHitsGround, order = 1):
     """
@@ -178,34 +221,3 @@ def findEstimatedValue(positionArray, tUsedArray, estimatedTimeBallHitsGround, o
     coefficients = np.polyfit(tUsedArray, positionArray, order)
 
     return np.polyval(coefficients, estimatedTimeBallHitsGround)
-
-
-import numpy as np
-
-def findBounceT(calculatedDepths, tUsed):
-    # Step 1: Fit a polynomial to the data
-    # We choose a polynomial of degree 2 (quadratic) which generally suits the parabolic motion of a bounce.
-    # We might need to adjust the degree based on the specific characteristics of the data.
-    coefficients = np.polyfit(tUsed, calculatedDepths, 2)
-
-    # Step 2: Create a polynomial from the coefficients
-    p = np.poly1d(coefficients)
-
-    # Step 3: Find the roots of the polynomial where the depth will be zero
-    roots = p.roots
-
-    # Step 4: Filter roots to find the correct one that comes after the initial depth
-    valid_roots = [root for root in roots if root.imag == 0 and root.real >= min(tUsed)]
-
-    # Step 5: Choose the smallest valid root that occurs after the start
-    if valid_roots:
-        return min(valid_roots).real
-    else:
-        return None
-
-# Example usage
-
-
-bounce_time = findBounceT(calculatedDepths, tUsed)
-print(f"Estimated time of bounce: {bounce_time} seconds")
-

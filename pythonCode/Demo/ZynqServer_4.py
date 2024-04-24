@@ -100,8 +100,9 @@ while True:
             else:  # DEBUGGING MODE
                 print('DEBUGGING RESULTS')
                 # Send XYZ over t Information
-                #ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
+                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
                 tcp.sendBallXYZ(ballPositionXYZ, npSocket)
+                print(ball.findBounceT(ballPositionXYZ))
         
             print('Results Sent')
         else :
