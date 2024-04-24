@@ -140,7 +140,7 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
     # Check which columns have Z values within the acceptable range
 
 
-    return ballPositionXYZ
+    pass
     
 def findBounceT():
     """
