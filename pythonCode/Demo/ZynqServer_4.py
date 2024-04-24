@@ -82,7 +82,6 @@ while True:
 
             t += int((end_time - start_time) * 1000)  # Convert processing time to ms
 
-
         # All Frames Processed
         print("Exiting process frames loop")
         resultsReady = True

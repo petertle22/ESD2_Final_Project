@@ -221,3 +221,24 @@ def findEstimatedValue(positionArray, tUsedArray, estimatedTimeBallHitsGround, o
     coefficients = np.polyfit(tUsedArray, positionArray, order)
 
     return np.polyval(coefficients, estimatedTimeBallHitsGround)
+
+def getCoefficientOfRestitution(ballPositionXYZ):
+    positionArray, timeArray = ballPositionXYZ[2, :], ballPositionXYZ[3, :]
+
+    timeOfImpact, idx, N = findBounceT(ballPositionXYZ), 0, len(positionArray)
+    lowestHeight, lowestHeightTime, lowestHeightIdx = float("inf"), -1, 0
+
+    while idx < N:
+        if lowestHeight > 0 and positionArray[idx] < lowestHeight and timeArray[idx] < timeOfImpact:
+            lowestHeight, lowestHeightTime, lowestHeightIdx = positionArray[idx], timeArray[idx], idx
+        idx += 1
+
+    idx, risingHeight, risingTime = 0, -1, 0
+    while idx < N:
+        if timeOfImpact < timeArray[idx] and positionArray[idx] > lowestHeight:
+            risingHeight, risingTime = positionArray[idx], timeArray[idx]
+            break
+
+    numerator = risingHeight / (risingTime - timeOfImpact)
+    denominator = lowestHeight / (timeOfImpact - lowestHeightTime)
+    return abs(numerator / denominator)
