@@ -65,6 +65,8 @@ def sendCMD(cmd, npSocket):
     cmd_msg = np.array(cmd, dtype=np.uint32)  # Formatting
     npSocket.send(cmd_msg)
 
+    return
+
 def sendBallXYZ(ballPositionXYZ, npSocket):
     """
     Sends a ball's XYZ position [mm] in 3D space over a set of frames in the following format:
@@ -94,20 +96,29 @@ def sendBallXYZ(ballPositionXYZ, npSocket):
     tMsg = np.array(ballPositionXYZ[3, :], dtype=np.uint32)
     npSocket.send(tMsg)
 
-def sendResult(mode, result, npSocket):
+    return
+
+def sendResult(mode, result, ballPositionXYZ, npSocket):
     """
     Depending on the requested mode, sends a final determination to the client
 
     :param mode : The mode that the result is correlated to (1 = Coeff Mode, 2 = In/Out Mode)
     :param result : Simple determination (ie. coefficient of restitution or In(1)/Out(0))
+    :param ballPositionXYZ : The ball's XYZ psition over time
     :param npSocket : The socket connection over which information is sent
     
     :return : None
     """
-    # Notify client which type of result this is
-    result_msg = np.array(mode, dtype=np.uint32)  # Formatting
-    npSocket.send(mode)
+    # Only send results for a valid mode
+    if (mode == 1 or mode == 2): # Only process valid mode results
+        # Notify client which type of result this is
+        result_msg = np.array(mode, dtype=np.uint32)  # Formatting
+        npSocket.send(mode)
+        # Send Result as Double 
+        result_msg = np.array(result, dtype=np.double)  # Formatting
+        npSocket.send(result_msg)
+        # Extra info sent for In/Out Mode
+        if (mode == 2):
+            sendBallXYZ(ballPositionXYZ, npSocket)
 
-    # Just send coefficient of restitution
-    result_msg = np.array(result, dtype=np.double)  # Formatting
-    npSocket.send(result_msg)
+    return 
