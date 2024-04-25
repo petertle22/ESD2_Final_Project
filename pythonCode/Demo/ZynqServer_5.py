@@ -13,6 +13,9 @@ import ctypes
 import copy
 import TCP_communication as tcp
 import ballDetection as ball
+from frameGrabber import ImageProcessing
+from frameGrabber import ImageFeedthrough
+from frameGrabber import ImageWriter
 
 # CONSTANTS
 #----------------------------------------------------------------------------------------------------------
@@ -27,12 +30,15 @@ MODE_COEFF = 1
 MODE_IN_OUT = 2
 
 # SETTINGS
-FPGA_ENABLE = False
+FPGA_ENABLE = True
 WINDSHIFT_ENABLE = False
 ACCEL_PROCESSING = True
 FRAME_REQUEST_TIMEOUT = 2000
 T_SKIP = 20
 #----------------------------------------------------------------------------------------------------------
+camProcessed = ImageProcessing()
+camFeedthrough = ImageFeedthrough()
+camWriter = ImageWriter()
 
 # Open Server
 npSocket = NumpySocket()
@@ -66,7 +72,7 @@ while True:
                 print("All Frames Received")
                 break
             tcp.requestFrame(t, frame, npSocket) # Send request for frame at t
-            frame_data = tcp.receiveFrame(npSocket) # Receive frame for t
+            frame_data, raw_data = tcp.receiveFrame(npSocket) # Receive frame for t
             # Access the individual images from frame
             ballLeftGray = frame_data['ballLeftGray']
             emptyLeftGray = frame_data['emptyLeftGray']
@@ -85,9 +91,8 @@ while True:
 
             # 1. Process frames to isolate ball from background
             if (FPGA_ENABLE): # Processing needed by FPGA
-                # IMPLEMENT 
-                # Get processedLeft and processedRight
-                pass
+                camWriter.setFrame(raw_data)
+                processedLeft,processedRight = camProcessed.getStereoGray()
             else: # No processing needed. Server Initially receieved processed images
                 processedLeft = ballLeftGray # => processedLeft = channel_0 image from client stream
                 processedRight = emptyLeftGray # => processedRight = channel_0 image from client stream
@@ -141,6 +146,17 @@ while True:
             # Send Calculated Result
             #tcp.sendResult(mode, result, ballPositionXYZ, npSocket) # Debugging results will not be sent
             print('Results Sent')
+                        # Display Image Processing 
+            fig, axs = plt.subplots(1, 2, figsize=(15, 5))  # 1 row, 3 columns
+            # Plot the first image: ballLeftGray
+            axs[0].imshow(processedLeft, cmap='gray')  # cmap='gray' ensures grayscale display
+            axs[0].axis('off')  # Hide the axes
+            axs[0].set_title('Left')
+            # Plot the second image: emptyLeftGray
+            axs[1].imshow(processedRight, cmap='gray')
+            axs[1].axis('off')
+            axs[1].set_title('Right')
+            plt.show()
 
         # Client has requested results at an invalid time
         else :
