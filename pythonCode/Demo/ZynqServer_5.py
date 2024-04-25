@@ -1,6 +1,7 @@
 """
 ZynqServer_5.py
 """
+print("Opened")
 from numpysocket import NumpySocket
 from matplotlib import pyplot as plt
 import cv2
@@ -36,7 +37,6 @@ ACCEL_PROCESSING = True
 FRAME_REQUEST_TIMEOUT = 2000
 T_SKIP = 20
 #----------------------------------------------------------------------------------------------------------
-print("Start")
 camProcessed = ImageProcessing()
 camFeedthrough = ImageFeedthrough()
 camWriter = ImageWriter()
