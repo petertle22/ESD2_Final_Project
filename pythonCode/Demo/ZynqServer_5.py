@@ -3,7 +3,7 @@ ZynqServer_5.py
 """
 print("Opened")
 import os
-print(os.chdir())
+print(os.getcwd())
 from numpysocket import NumpySocket
 print("Imported numpysocket")
 from matplotlib import pyplot as plt
