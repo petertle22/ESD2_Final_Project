@@ -237,3 +237,16 @@ def getCoefficientOfRestitution(ballPositionXYZ):
 
     restitutionRatio = abs(afterV / beforeV)
     return restitutionRatio
+
+def getLineDecision(ballPositionXYZ, matchType, shotType):
+    """
+    getLineDecision analyzes a filtered data set of a ball's X,Y,Z,t position accross a series of frames
+    to determine whether the ball bounced within boundary lines (dependent on match/shot type)
+
+    :param ballPositionXYZ : X,Y,Z,t information of the ball
+    :param matchType : integer to specify the tpe of match (singles = 1, doubles = 2)
+    :param shotType : integer to specify the tpe of shot (serve = 1, volley = 2)
+
+    :return : "In" (1) or "Out" (0)
+    """
+    pass
