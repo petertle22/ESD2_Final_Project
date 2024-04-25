@@ -3,6 +3,7 @@ ZynqServer_5.py
 """
 print("Opened")
 from numpysocket import NumpySocket
+print("Imported numpysocket")
 from matplotlib import pyplot as plt
 import cv2
 import numpy as np
@@ -13,10 +14,15 @@ import sys, random
 import ctypes
 import copy
 import TCP_communication as tcp
+print("TCP")
 import ballDetection as ball
+print("balDetection")
 from frameGrabber import ImageProcessing
+print("framGrabber1")
 from frameGrabber import ImageFeedthrough
+print("frameGrabber2")
 from frameGrabber import ImageWriter
+print("frameGrabber3")
 
 # CONSTANTS
 #----------------------------------------------------------------------------------------------------------
@@ -37,9 +43,11 @@ ACCEL_PROCESSING = True
 FRAME_REQUEST_TIMEOUT = 2000
 T_SKIP = 20
 #----------------------------------------------------------------------------------------------------------
+print("Creating Objects...")
 camProcessed = ImageProcessing()
 camFeedthrough = ImageFeedthrough()
 camWriter = ImageWriter()
+print("Objects Created...")
 
 # Open Server
 npSocket = NumpySocket()
