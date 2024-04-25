@@ -36,6 +36,7 @@ ACCEL_PROCESSING = True
 FRAME_REQUEST_TIMEOUT = 2000
 T_SKIP = 20
 #----------------------------------------------------------------------------------------------------------
+print("Start")
 camProcessed = ImageProcessing()
 camFeedthrough = ImageFeedthrough()
 camWriter = ImageWriter()
