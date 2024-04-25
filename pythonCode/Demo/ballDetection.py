@@ -4,23 +4,19 @@ import matplotlib as plt
 
 def process_images(ballLeftGray, emptyLeftGray, ballRightGray, emptyRightGray):
     """
-    Receives four distinct grayscale images and returns the background subtracted/binarized product of the two pairs
+    process_images takes 2 stereo images (an image with a ball, and an image of the empty court),
+    background subtracts the two stereo images and thresholds the product to produce a binarized
+    stereo image of an isolate ball in the frame
 
-    Parameters
-    ----------
-        ballLeftGray : Grayscale image of the left view with the ball present.
-        emptyLeftGray : Grayscale background image of the left view without the ball.
-        ballRightGray : Grayscale image of the right view with the ball present.
-        emptyRightGray : Grayscale background image of the right view without the ball.
+    :param ballLeftGray: uint8 image of a tennis court with a ball from left camera perspective
+    :param emptyLeftGray: uint8 image of empty tennis court from left camera perspective
+    :param ballRightGray: uint8 image of a tennis court with a ball from right camera perspective
+    :param emptyRightGray: uint8 image of empty tennis court from right camera perspective
 
-
-    Returns
-    -------
-         tuple: A tuple containing two numpy arrays:
+    :return : A tuple containing two numpy arrays:
             - processedLeft : Processed binary image of the left view.
             - processedRight : Processed binary image of the right view.
-
-    """
+    """ 
     # Ensure images are of type uint8 and have dimensions 752x480
     assert ballLeftGray.dtype == np.uint8 and ballLeftGray.shape == (480, 752)
     assert emptyLeftGray.dtype == np.uint8 and emptyLeftGray.shape == (480, 752)
@@ -32,8 +28,8 @@ def process_images(ballLeftGray, emptyLeftGray, ballRightGray, emptyRightGray):
     diffRight = cv2.absdiff(ballRightGray, emptyRightGray)
 
     # Binarization of the subtracted images
-    _, processedLeft = cv2.threshold(diffLeft, 10, 255, cv2.THRESH_BINARY)
-    _, processedRight = cv2.threshold(diffRight, 10, 255, cv2.THRESH_BINARY)
+    _, processedLeft = cv2.threshold(diffLeft, 100, 255, cv2.THRESH_BINARY)
+    _, processedRight = cv2.threshold(diffRight, 100, 255, cv2.THRESH_BINARY)
 
     # Convert images to uint8 if necessary
     processedLeft = np.uint8(processedLeft)
@@ -43,23 +39,19 @@ def process_images(ballLeftGray, emptyLeftGray, ballRightGray, emptyRightGray):
 
 def find_centroid(binary_image):
     """
-    Receives a processed binary image of a presumable black image with a white ball 
+    find_centroid receives a processed binary image of a presumable black image with a white ball 
     somewhere in the frame. Returns the x,y pixel coordinates of the centroid.
 
-    Parameters
-    ----------
-        binary_image : The image to find the centroid within
+    :param binary_image : The image to find the centroid within
 
-
-    Returns
-    -------
-        tuple: A tuple containing three values:
+    :return : A tuple containing three values:
             - ballFound : boolean for if a centroid was detected
             - cx : x-coordinate of centroid pixel.
             - cy : y-coordinate of centroid pixel.
-
     """
-    ballFound = True
+    # BInitialize Variables
+    ballFound = True # Boolean for specifying if a ball was found
+
     # Identfy all possible contours in image
     contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2:]
 
@@ -79,45 +71,42 @@ def find_centroid(binary_image):
     
 def calcStereoXYZ(xLeft, yLeft, xRight, yRight):
     """
-    Given x,y centroid pixel coordinates from a stereo camera, return the Z,Y,Z position in 3D space of the centroid
+    calcStereoXYZ receives a centroid's (x,y) coordinate from a stereo camera's left and right perspective 
+    and returns the centroid's X,Y,Z position in 3D space [m] in terms of the center of the court on the ground = (0,0,0)
 
-    Parameters
-    ----------
-        xLeft : The x-coordinate of the centroid from the left camera perspective
-        yLeft : The y-coordinate of the centroid from the left camera perspective
-        xRight : The x-coordinate of the centroid from the right camera perspective
-        yRight : The y-coordinate of the centroid from the right camera perspective
+    :param xLeft : The x-coordinate of the centroid from the left camera perspective
+    :param yLeft : The y-coordinate of the centroid from the left camera perspective
+    :param xRight : The x-coordinate of the centroid from the right camera perspective
+    :param yRight : The y-coordinate of the centroid from the right camera perspective
 
-
-    Returns
-    -------
-        tuple: A tuple containing three values:
+    :return : A tuple containing three values:
             - X : ball's X position [m] in 3D Space
             - Y : ball's Y position [m] in 3D Space
             - Z : ball's Z position [m] in 3D Space
-
     """
-    # CONSTANTS
+    # CAMERA INTRINSICS
     CAM_B = 100.0 # baseline [mm]
     CAM_F = 2.56 # focal length [mm]
     CAM_PS = 0.006 # pixel size [mm]
     CAM_XNUMPIX = 752.0 # total number of pixels in x direction of the sensor [px]
     CAM_CXLEFT = CAM_XNUMPIX / 2 # left camera x center [px]
     CAM_CXRIGHT = CAM_XNUMPIX / 2 # right camera x center [px]
-    CAM_YNUMPIX = 480
-    CAM_CYLEFT = CAM_YNUMPIX / 2
-    CAM_CYRIGHT = CAM_YNUMPIX / 2
-    CAM_HEIGHT = 9000.0 # camera height [mm]
+    CAM_YNUMPIX = 480 # total number of pixels in y direction of the sensor [px]
+    CAM_CYLEFT = CAM_YNUMPIX / 2 # left camera y center [px]
 
-    # Calculate Z
+    # CAMERA EXTRINSICS
+    CAM_HEIGHT = 9000.0 # camera height from ground [mm]
+
+    # Calculate depth from camera [mm]
     disparity = (abs((xLeft - CAM_CXLEFT) - (xRight - CAM_CXRIGHT)) * CAM_PS) # disparity [mm]
     depth = (CAM_B * CAM_F) / disparity # depth [mm]
 
+    # Calculate real-world X,Y,Z [mm]
     X = depth * (xLeft - CAM_CXLEFT) * CAM_PS / CAM_F + CAM_B / 2
     Y = depth * (yLeft - CAM_CYLEFT) * CAM_PS / CAM_F
     Z = CAM_HEIGHT - depth # Centroid's height off of the ground [mm]
 
-    # Convert to Meters
+    # Convert to Meters and adjust to cordinate system
     X = -(X / 1000)
     Y = -(Y / 1000)
     Z = Z / 1000
@@ -126,18 +115,13 @@ def calcStereoXYZ(xLeft, yLeft, xRight, yRight):
 
 def filterStereoXYZ(ballPositionXYZ_RAW):
     """
-    Filter the ball position data based on Z coordinate constraints.
-    Removes any columns from the array where Z < 0 or Z > 9.
+    filterStereoXYZ removes invalid entries in an array of ball XYZ positions over time.
+    Current implementation:
+        - Remove all entries with a depth less than 0m or greater than 8m
 
-    Parameters
-    ----------
-    ballPositionXYZ_RAW : np.ndarray
-        A 2D NumPy array where each column represents a frame and rows represent X, Y, Z, T values respectively.
+    :param ballPositionXYZ_RAW : Array to be filtered
 
-    Returns
-    -------
-    np.ndarray
-        A filtered 2D NumPy array containing only the columns where the Z value is between 0 and 9 inclusive.
+    :return : The filtered 2D numpy array
     """
     # Create a list to hold columns that pass the filter
     valid_columns = []
@@ -158,43 +142,36 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
     
 def findBounceT(ballPositionXYZ):
     """
-    Given
+    findBounceT uses a polyfit on an array of ball XYZ positions over time to estimate the approx. t[ms] 
+    in which the ball will reach a Z = 0 (bounce depth)
 
-    Parameters
-    ----------
-        
+    :param ballPositionXYZ : Array to estimate bounceT from
 
-    Returns
-    -------
-         
-
+    :return : The floating point estimate of t[ms] at which Z = 0
     """
+    # Extract just the Z and t values for each frame
     calculatedDepths = ballPositionXYZ[2, :]
     t = ballPositionXYZ[3, :]
 
+    # Find cutoff point just before a bounce
     index = 0
     for depth in calculatedDepths:
-        if depth <= 0.2:
+        if depth <= 0.2: # Arbitrary cutoff height
             # Cut both arrays at this index (including this index)
             calculatedDepths = calculatedDepths[:index + 1]
             t = t[:index + 1]
         index += 1
 
-    # Step 1: Fit a polynomial to the data
-    # We choose a polynomial of degree 2 (quadratic) which generally suits the parabolic motion of a bounce.
-    # We might need to adjust the degree based on the specific characteristics of the data.
-    coefficients = np.polyfit(t, calculatedDepths, 2)
-
-    # Step 2: Create a polynomial from the coefficients
+    # Fit a polynomial to the data to get its coefficients
+    coefficients = np.polyfit(t, calculatedDepths, 2) # Use quadratic polyfit because of gravity affecting trajectory
+    # Create a polynomial from the coefficients
     p = np.poly1d(coefficients)
-
-    # Step 3: Find the roots of the polynomial where the depth will be zero
+    # Find the roots of the polynomial where the depth will be zero
     roots = p.roots
-
-    # Step 4: Filter roots to find the correct one that comes after the initial depth
+    # Filter roots to find the correct one that comes after the initial depth
     valid_roots = [root for root in roots if root.imag == 0 and root.real >= min(t)]
 
-    # Step 5: Choose the smallest valid root that occurs after the start
+    # Choose the smallest valid root that occurs after the start
     if valid_roots:
         return min(valid_roots).real
     else:
@@ -202,27 +179,31 @@ def findBounceT(ballPositionXYZ):
 
 def findEstimatedValue(positionArray, tUsedArray, estimatedTimeBallHitsGround, order = 1):
     """
-    Using a polyfit, this function estimates the X,Y, or Z value at a certain time value given an array 
-    of known positions at each frame
+    findEstimatedValue uses a polyfit of a ball's X,Y, or Z position to estimate the coordinate's value
+    at a given time guess[ms]
 
-    Parameters
-    ----------
-        positionArray : An array of X,Y, or Z values at a given frame
-        tUsedArray : An array of corresponding time values used at each frame
-        estimatedTimeBallHitsGround : A time value that the X,Y, or Z position will be stimated at
-        order : The order of the polyfit function found (1 by default)
+    :param positionArray : Array of ball positions to estimate from
+    :param tUsedArray : Array of corresponding times [ms] to estimate from
+    :param estimatedTimeBallHitsGround : t value to evaluate function at
+    :param order : order of the polyfit used (Linear polyfit by default)
 
-
-    Returns
-    -------
-         np value : The estimated X, Y, or Z coordinate at the given t
-
+    :return : The estimated X, Y, or Z coordinate at the given t
     """
+    # Fit a polynomial to the data
     coefficients = np.polyfit(tUsedArray, positionArray, order)
 
+    # Evaluate and return
     return np.polyval(coefficients, estimatedTimeBallHitsGround)
 
 def getCoefficientOfRestitution(ballPositionXYZ):
+    """
+    getCoefficientOfRestitution uses a ball's X,Y,Z position over time to calculate the ball/court 
+    coefficient of restitution by comparing velocity before and after a bounce
+
+    :param ballPositionXYZ : The ball X,Y,Z,t information to calculate from
+
+    :return : The coefficient of restitution
+    """
     positionArray, timeArray = ballPositionXYZ[2, :], ballPositionXYZ[3, :]
 
     timeOfImpact, idx, N = findBounceT(ballPositionXYZ), 0, len(positionArray)

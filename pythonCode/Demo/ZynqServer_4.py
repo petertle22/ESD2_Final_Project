@@ -1,5 +1,6 @@
-# ZynqServer_4.py performs the following functions
-# 1. 
+"""
+ZynqServer_4.py
+"""
 from numpysocket import NumpySocket
 from matplotlib import pyplot as plt
 import cv2
