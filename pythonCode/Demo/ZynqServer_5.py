@@ -29,8 +29,9 @@ MODE_IN_OUT = 2
 # SETTINGS
 FPGA_ENABLE = False
 WINDSHIFT_ENABLE = False
-ACCEL_PROCESSING = False
-FRAME_REQUEST_TIMEOUT = 400
+ACCEL_PROCESSING = True
+FRAME_REQUEST_TIMEOUT = 2000
+T_SKIP = 20
 #----------------------------------------------------------------------------------------------------------
 
 # Open Server
@@ -105,7 +106,7 @@ while True:
             # 4. Update t
             end_time = time.time()
             if ((not ballFound) and (ACCEL_PROCESSING)): # DEBUGGING update t faster when ball is out of frame
-                t += 50
+                t += T_SKIP
             else:
                 t += int((end_time - start_time) * 1000)  # Convert processing time to ms
 
@@ -131,10 +132,14 @@ while True:
                 # Send XYZ over t Information
                 ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
                 tcp.sendBallXYZ(ballPositionXYZ, npSocket)
+                print('Bounce t:')
                 print(ball.findBounceT(ballPositionXYZ))
+                result = ball.getCoefficientOfRestitution(ballPositionXYZ)
+                print('Coeff:')
+                print(result)
 
             # Send Calculated Result
-            tcp.sendResult(mode, result, ballPositionXYZ, npSocket) # Debugging results will not be sent
+            #tcp.sendResult(mode, result, ballPositionXYZ, npSocket) # Debugging results will not be sent
             print('Results Sent')
 
         # Client has requested results at an invalid time

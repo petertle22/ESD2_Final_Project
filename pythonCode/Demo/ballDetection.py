@@ -128,7 +128,7 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
 
     # Iterate over each column (frame) in the array
     for i in range(ballPositionXYZ_RAW.shape[1]):
-        if (0 <= ballPositionXYZ_RAW[2, i]) and (ballPositionXYZ_RAW[2, i] <= 8):
+        if (-1 <= ballPositionXYZ_RAW[2, i]) and (ballPositionXYZ_RAW[2, i] <= 8):
             valid_columns.append(ballPositionXYZ_RAW[:, i])
 
     # Convert the list of arrays back into a 2D NumPy array
@@ -161,6 +161,11 @@ def findBounceT(ballPositionXYZ):
             calculatedDepths = calculatedDepths[:index + 1]
             t = t[:index + 1]
         index += 1
+
+    # MAV the data to smooth the curve
+    window_size = 3  # Adjust this size to fit the smoothing level you need
+    window = np.ones(window_size) / window_size
+    calculatedDepths = np.convolve(calculatedDepths, window, 'same')
 
     # Fit a polynomial to the data to get its coefficients
     coefficients = np.polyfit(t, calculatedDepths, 2) # Use quadratic polyfit because of gravity affecting trajectory
@@ -205,21 +210,30 @@ def getCoefficientOfRestitution(ballPositionXYZ):
     :return : The coefficient of restitution
     """
     positionArray, timeArray = ballPositionXYZ[2, :], ballPositionXYZ[3, :]
-
     timeOfImpact, idx, N = findBounceT(ballPositionXYZ), 0, len(positionArray)
-    lowestHeight, lowestHeightTime, lowestHeightIdx = float("inf"), -1, 0
 
-    while idx < N:
-        if lowestHeight > 0 and positionArray[idx] < lowestHeight and timeArray[idx] < timeOfImpact:
-            lowestHeight, lowestHeightTime, lowestHeightIdx = positionArray[idx], timeArray[idx], idx
-        idx += 1
+   # Find the index of the closest time in timeArray to the timeOfImpact
+    bounceFrame = np.argmin(np.abs(timeArray - timeOfImpact))
 
-    idx, risingHeight, risingTime = 0, -1, 0
-    while idx < N:
-        if timeOfImpact < timeArray[idx] and positionArray[idx] > lowestHeight:
-            risingHeight, risingTime = positionArray[idx], timeArray[idx]
-            break
+    # Split the arrays into before and after the bounce
+    positionBefore = positionArray[:bounceFrame + 1]
+    positionAfter = positionArray[bounceFrame:]
 
-    numerator = risingHeight / (risingTime - timeOfImpact)
-    denominator = lowestHeight / (timeOfImpact - lowestHeightTime)
-    return abs(numerator / denominator)
+    timeBefore = timeArray[:bounceFrame + 1]
+    timeAfter = timeArray[bounceFrame:]
+
+    # First order polyfit (linear regression) to get the slope before and after the bounce
+    coefficientsBefore = np.polyfit(timeBefore, positionBefore, 1)
+    coefficientsAfter = np.polyfit(timeAfter, positionAfter, 1)
+
+    # Extract the slopes
+    beforeV = coefficientsBefore[0]  # Slope of the line before the bounce
+    afterV = coefficientsAfter[0]    # Slope of the line after the bounce
+
+    # Calculate the ratio of the slopes
+    # Ensure afterV is not zero to avoid division by zero
+    if afterV == 0:
+        return None
+
+    restitutionRatio = abs(afterV / beforeV)
+    return restitutionRatio
