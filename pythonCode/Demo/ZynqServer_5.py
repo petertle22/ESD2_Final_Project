@@ -2,6 +2,8 @@
 ZynqServer_5.py
 """
 print("Opened")
+import os
+print(os.chdir())
 from numpysocket import NumpySocket
 print("Imported numpysocket")
 from matplotlib import pyplot as plt
@@ -155,7 +157,7 @@ while True:
             # Send Calculated Result
             #tcp.sendResult(mode, result, ballPositionXYZ, npSocket) # Debugging results will not be sent
             print('Results Sent')
-                        # Display Image Processing 
+            # Display Image Processing 
             fig, axs = plt.subplots(1, 2, figsize=(15, 5))  # 1 row, 3 columns
             # Plot the first image: ballLeftGray
             axs[0].imshow(processedLeft, cmap='gray')  # cmap='gray' ensures grayscale display
