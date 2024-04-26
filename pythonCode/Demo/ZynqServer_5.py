@@ -27,6 +27,10 @@ RESULTS_CMD = 2
 # General Mapping
 MODE_COEFF = 1
 MODE_IN_OUT = 2
+MATCH_TYPE_SINGLES = 1
+MATCH_TYPE_DOUBLES = 2
+SHOT_TYPE_SERVE = 1
+SHOT_TYPE_VOLLEY = 2
 
 # SETTINGS
 FPGA_ENABLE = True
@@ -34,8 +38,6 @@ WINDSHIFT_ENABLE = False
 ACCEL_PROCESSING = True
 FRAME_REQUEST_TIMEOUT = 400
 T_SKIP = 20
-MATCH_TYPE_SERVE = 1
-MATCH_TYPE_VOLLEY = 2
 #----------------------------------------------------------------------------------------------------------
 # INITIALIZE FPGA
 if (FPGA_ENABLE):
@@ -76,7 +78,7 @@ while True:
                 print("All Frames Received")
                 break
             tcp.requestFrame(t, frame, npSocket) # Send request for frame at t
-            if(FPGA_ENABLE):
+            if(not FPGA_ENABLE):
                 frame_data = tcp.receiveFrame(npSocket) # Receive frame for t
                 # Access the individual images from frame
                 ballLeftGray = frame_data['ballLeftGray']
@@ -142,9 +144,9 @@ while True:
                 tcp.sendResult(mode, coeff, ballPositionXYZ, npSocket) # Send Coefficient
             elif mode == MODE_IN_OUT:  # Shot Mode
                 print('Calculating In/Out...')
-                if matchType == MATCH_TYPE_SERVE:
+                if shotType == SHOT_TYPE_SERVE:
                     print("The serve is " + "in bounds!" if ball.isServeInBound(ballPositionXYZ) else "out of bounds!")
-                elif matchType == MATCH_TYPE_VOLLEY:
+                elif shotType == SHOT_TYPE_VOLLEY:
                     print("The volley is " + "in bounds!" if ball.isVolleyInBound(ballPositionXYZ) else "out of bounds!")
                 else:
                     print('No mode selection made for determining in/out...')
