@@ -123,20 +123,27 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
 
     :return : The filtered 2D numpy array
     """
-    # Create a list to hold columns that pass the filter
-    valid_columns = []
+    # Choose which filter to use
+    FILTER_SELECT = 1
 
-    # Iterate over each column (frame) in the array
-    for i in range(ballPositionXYZ_RAW.shape[1]):
-        if (-1 <= ballPositionXYZ_RAW[2, i]) and (ballPositionXYZ_RAW[2, i] <= 8):
-            valid_columns.append(ballPositionXYZ_RAW[:, i])
+    if (FILTER_SELECT == 0): # Simple filter. Remove all extreme outliers
+        # Create a list to hold columns that pass the filter
+        valid_columns = []
 
-    # Convert the list of arrays back into a 2D NumPy array
-    if valid_columns:
-        ballPositionXYZ = np.column_stack(valid_columns)
-    else:
-        # If no valid columns, return an empty array with the same number of rows and zero columns
-        ballPositionXYZ = np.empty((ballPositionXYZ_RAW.shape[0], 0))
+        # Iterate over each column (frame) in the array
+        for i in range(ballPositionXYZ_RAW.shape[1]):
+            if (-1 <= ballPositionXYZ_RAW[2, i]) and (ballPositionXYZ_RAW[2, i] <= 8):
+                valid_columns.append(ballPositionXYZ_RAW[:, i])
+
+        # Convert the list of arrays back into a 2D NumPy array
+        if valid_columns:
+            ballPositionXYZ = np.column_stack(valid_columns)
+        else:
+            # If no valid columns, return an empty array with the same number of rows and zero columns
+            ballPositionXYZ = np.empty((ballPositionXYZ_RAW.shape[0], 0))
+    elif (FILTER_SELECT == 1): #Polyfit, normalize strays to polyfit zone
+        pass
+        
 
     return ballPositionXYZ
     
