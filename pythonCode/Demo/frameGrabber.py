@@ -55,7 +55,7 @@ class ImageProcessing(object):
 
   def getStereoGray (self):
     result = self.lib.getFrame(ctypes.c_void_p(self.receiveFrame.ctypes.data))
-    return self.receiveFrame[:,:,3],self.receiveFrame[:,:,7]
+    return self.receiveFrame[:,:,0],self.receiveFrame[:,:,1]
 
   # temp function until I have the simulink data stored in the gray channel
   def getStereoGrayFrame (self):
