@@ -34,6 +34,8 @@ WINDSHIFT_ENABLE = False
 ACCEL_PROCESSING = True
 FRAME_REQUEST_TIMEOUT = 1000
 T_SKIP = 20
+MATCH_TYPE_SERVE = 1
+MATCH_TYPE_VOLLEY = 2
 #----------------------------------------------------------------------------------------------------------
 # INITIALIZE FPGA
 if (FPGA_ENABLE):
@@ -137,7 +139,13 @@ while True:
                 tcp.sendResult(mode, coeff, ballPositionXYZ, npSocket) # Send Coefficient
             elif mode == MODE_IN_OUT:  # Shot Mode
                 print('Calculating In/Out...')
-                lineDecison = ball.getLineDecision(ballPositionXYZ, matchType, shotType)
+                if matchType == MATCH_TYPE_SERVE:
+                    print("The serve is " + "in bounds!" if ball.isServeInBound(ballPositionXYZ) else "out of bounds!")
+                elif matchType == MATCH_TYPE_VOLLEY:
+                    print("The volley is " + "in bounds!" if ball.isVolleyInBound(ballPositionXYZ) else "out of bounds!")
+                else:
+                    print('No mode selection made for determining in/out...')
+
             else:  # DEBUGGING MODE
                 print('DEBUGGING RESULTS...')
                 # Send XYZ over t Information
