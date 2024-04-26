@@ -123,7 +123,10 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
 
     :return : The filtered 2D numpy array
     """
-    # Create a list to hold columns that pass the filter
+    # Choose which filter to use
+    FILTER_SELECT = 1
+
+    # Simple filter
     valid_columns = []
 
     # Iterate over each column (frame) in the array
@@ -137,6 +140,34 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
     else:
         # If no valid columns, return an empty array with the same number of rows and zero columns
         ballPositionXYZ = np.empty((ballPositionXYZ_RAW.shape[0], 0))
+
+    if (FILTER_SELECT == 1): #Polyfit, normalize strays to polyfit zone
+        buffer_zone = 0.5
+
+        # Extract Z values and corresponding times
+        Z = ballPositionXYZ[2, :]
+        t = ballPositionXYZ[3, :]
+
+        # Fit a second order polynomial to Z over time
+        p = np.polyfit(t, Z, 2)  # Coefficients of the polynomial
+
+        # Iterate over each column (frame) in the array
+        for i in range(ballPositionXYZ.shape[1]):
+            # Calculate the upper and lower bounds of the buffer zone
+            Z_fit = np.polyval(p, ballPositionXYZ[3, i])  # Evaluated polynomial at current time
+            upper_bound = Z_fit + buffer_zone
+            lower_bound = Z_fit - buffer_zone
+            if (lower_bound <= ballPositionXYZ[2, i]) and (ballPositionXYZ[2, i] <= upper_bound):
+                valid_columns.append(ballPositionXYZ[:, i])
+
+        # Convert the list of arrays back into a 2D NumPy array
+        if valid_columns:
+            filteredXYZ = np.column_stack(valid_columns)
+        else:
+            # If no valid columns, return an empty array with the same number of rows and zero columns
+            filteredXYZ = np.empty((ballPositionXYZ.shape[0], 0))
+
+        return filteredXYZ
 
     return ballPositionXYZ
     
@@ -237,3 +268,59 @@ def getCoefficientOfRestitution(ballPositionXYZ):
 
     restitutionRatio = abs(afterV / beforeV)
     return restitutionRatio
+
+def getLineDecision(ballPositionXYZ, matchType, shotType):
+    """
+    getLineDecision analyzes a filtered data set of a ball's X,Y,Z,t position accross a series of frames
+    to determine whether the ball bounced within boundary lines (dependent on match/shot type)
+
+    :param ballPositionXYZ : X,Y,Z,t information of the ball
+    :param matchType : integer to specify the tpe of match (singles = 1, doubles = 2)
+    :param shotType : integer to specify the tpe of shot (serve = 1, volley = 2)
+
+    :return : "In" (1) or "Out" (0)
+    """
+    pass
+
+def isServeInBound(ballPositionXYZ):
+    timeOfImpact = findBounceT(ballPositionXYZ)
+    startingX, startingY, startingZ, _ = ballPositionXYZ[0] # Get the starting position of the serve
+
+    bounceX, bounceY = None, None  # Get the bounce location of the serve
+    for i in range(len(ballPositionXYZ)):
+        thisTime = ballPositionXYZ[3, i]
+        if timeOfImpact < thisTime:
+            bounceX, bounceY = ballPositionXYZ[:1, i]
+            break
+    
+    if bounceX > startingX: # The serve is going right-to-left relative to the camera
+        if startingY > 0: # The serve is going top-right corner to bottom-left corner
+            return bounceX <= 6.4 and -4.115 <= bounceY and bounceY <= 0 
+        elif startingY < 0: # The serve is going bottom-left corner to top-right corner
+            return bounceX <= 6.4 and 0 <= bounceY and bounceY <= 4.115
+        else:
+            return False
+
+    else: # The serve is going left to right relative to the camera
+        if startingY > 0:  # The serve is going top-left corner to bottom-right corner
+            return -6.4 <= bounceX and -4.115 <= bounceY and bounceY <= 0 
+        elif startingY < 0:
+            return -6.4 <= bounceX and 0 <= bounceY and bounceY <= 4.115
+        else:
+            return False
+
+def isVolleyInBound(ballPositionXYZ):
+    timeOfImpact = findBounceT(ballPositionXYZ)
+    startingX, startingY, _, _ = ballPositionXYZ[0] # Get the starting position of the serve
+
+    bounceX, bounceY = None, None  # Get the bounce location of the serve
+    for i in range(len(ballPositionXYZ)):
+        thisTime = ballPositionXYZ[3, i]
+        if timeOfImpact < thisTime:
+            bounceX, bounceY = ballPositionXYZ[:1, i]
+            break
+    
+    if bounceX > startingX: # The volley is going right-to-left relative to the camera
+        return 0 <= bounceX and bounceX <= 11.885 and -5.485 <= bounceY and bounceY <= 5.485
+    else: # The volley is going left to right relative to the camera
+        return -11.885 <= bounceX and bounceX <= 0 and -5.485 <= bounceY and bounceY <= 5.485

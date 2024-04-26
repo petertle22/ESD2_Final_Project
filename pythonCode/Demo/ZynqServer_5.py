@@ -1,11 +1,8 @@
 """
 ZynqServer_5.py
 """
-print("Opened")
-import os
-print(os.getcwd())
+print("File Opened")
 from numpysocket import NumpySocket
-print("Imported numpysocket")
 from matplotlib import pyplot as plt
 import cv2
 import numpy as np
@@ -16,15 +13,8 @@ import sys, random
 import ctypes
 import copy
 import TCP_communication as tcp
-print("TCP")
 import ballDetection as ball
-print("balDetection")
-from frameGrabber import ImageProcessing
-print("framGrabber1")
-from frameGrabber import ImageFeedthrough
-print("frameGrabber2")
-from frameGrabber import ImageWriter
-print("frameGrabber3")
+import frameGrabber as fpga
 
 # CONSTANTS
 #----------------------------------------------------------------------------------------------------------
@@ -42,14 +32,17 @@ MODE_IN_OUT = 2
 FPGA_ENABLE = True
 WINDSHIFT_ENABLE = False
 ACCEL_PROCESSING = True
-FRAME_REQUEST_TIMEOUT = 2000
+FRAME_REQUEST_TIMEOUT = 1000
 T_SKIP = 20
+MATCH_TYPE_SERVE = 1
+MATCH_TYPE_VOLLEY = 2
 #----------------------------------------------------------------------------------------------------------
-print("Creating Objects...")
-camProcessed = ImageProcessing()
-camFeedthrough = ImageFeedthrough()
-camWriter = ImageWriter()
-print("Objects Created...")
+# INITIALIZE FPGA
+if (FPGA_ENABLE):
+    print("Initializing FPGA...")
+    camProcessed, camFeedthrough, camWriter = fpga.initFPGA()
+    print("Initialized.")
+
 
 # Open Server
 npSocket = NumpySocket()
@@ -102,8 +95,8 @@ while True:
 
             # 1. Process frames to isolate ball from background
             if (FPGA_ENABLE): # Processing needed by FPGA
-                camWriter.setFrame(raw_data)
-                processedLeft,processedRight = camProcessed.getStereoGray()
+                camWriter.setFrame(raw_data) # Send stereo image for processing
+                processedLeft,processedRight = camProcessed.getStereoGray() # Receieve processed stereo frames
             else: # No processing needed. Server Initially receieved processed images
                 processedLeft = ballLeftGray # => processedLeft = channel_0 image from client stream
                 processedRight = emptyLeftGray # => processedRight = channel_0 image from client stream
@@ -136,17 +129,26 @@ while True:
         print('Results Requested...')
         # Calculate Corresponding Result
         if (resultsReady):
+            # 1. Filter Data
+            ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
+
+            # 2. Get Mode-Specific Results
             if (mode == MODE_COEFF):  # Coeff Mode
                 print('Calculating Coefficient of Restitution...')
-                result = ball.getCoefficientOfRestitution(ballPositionXYZ)
-                tcp.sendResult(mode, result, )
+                coeff = ball.getCoefficientOfRestitution(ballPositionXYZ) # Calculate coefficient
+                tcp.sendResult(mode, coeff, ballPositionXYZ, npSocket) # Send Coefficient
             elif mode == MODE_IN_OUT:  # Shot Mode
                 print('Calculating In/Out...')
-                # IMPLEMENT
+                if matchType == MATCH_TYPE_SERVE:
+                    print("The serve is " + "in bounds!" if ball.isServeInBound(ballPositionXYZ) else "out of bounds!")
+                elif matchType == MATCH_TYPE_VOLLEY:
+                    print("The volley is " + "in bounds!" if ball.isVolleyInBound(ballPositionXYZ) else "out of bounds!")
+                else:
+                    print('No mode selection made for determining in/out...')
+
             else:  # DEBUGGING MODE
                 print('DEBUGGING RESULTS...')
                 # Send XYZ over t Information
-                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
                 tcp.sendBallXYZ(ballPositionXYZ, npSocket)
                 print('Bounce t:')
                 print(ball.findBounceT(ballPositionXYZ))
@@ -154,20 +156,7 @@ while True:
                 print('Coeff:')
                 print(result)
 
-            # Send Calculated Result
-            #tcp.sendResult(mode, result, ballPositionXYZ, npSocket) # Debugging results will not be sent
             print('Results Sent')
-            # Display Image Processing 
-            fig, axs = plt.subplots(1, 2, figsize=(15, 5))  # 1 row, 3 columns
-            # Plot the first image: ballLeftGray
-            axs[0].imshow(processedLeft, cmap='gray')  # cmap='gray' ensures grayscale display
-            axs[0].axis('off')  # Hide the axes
-            axs[0].set_title('Left')
-            # Plot the second image: emptyLeftGray
-            axs[1].imshow(processedRight, cmap='gray')
-            axs[1].axis('off')
-            axs[1].set_title('Right')
-            plt.show()
 
         # Client has requested results at an invalid time
         else :
