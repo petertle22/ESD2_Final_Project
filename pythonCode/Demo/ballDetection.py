@@ -250,3 +250,32 @@ def getLineDecision(ballPositionXYZ, matchType, shotType):
     :return : "In" (1) or "Out" (0)
     """
     pass
+
+def isServeInBound(ballPositionXYZ):
+    timeOfImpact = findBounceT(ballPositionXYZ)
+    startingX, startingY, startingZ, _ = ballPositionXYZ[0] # Get the starting position of the serve
+
+    bounceX, bounceY, bounceZ = None, None, None # Get the bounce location of the serve
+    for i in range(len(ballPositionXYZ)):
+        thisTime = ballPositionXYZ[3, i]
+        if timeOfImpact < thisTime:
+            bounceX, bounceY, bounceZ = ballPositionXYZ[:2, i]
+            break
+    
+    if bounceX > startingX: # The serve is going right-to-left relative to the camera
+        if startingY > 0: # The serve is going top-right corner to bottom-left corner
+            return bounceX <= 6.4 and -4.115 <= bounceY and bounceY <= 0 
+        elif startingY < 0: # The serve is going bottom-left corner to top-right corner
+            return bounceX <= 6.4 and 0 <= bounceY and bounceY <= 4.115
+        else:
+            return False
+
+    else: # The serve is going left to right relative to the camera
+        if startingY > 0:  # The serve is going top-left corner to bottom-right corner
+            return -6.4 <= bounceX and -4.115 <= bounceY and bounceY <= 0 
+        elif startingY < 0:
+            return -6.4 <= bounceX and 0 <= bounceY and bounceY <= 4.115
+        else:
+            return False
+
+        
