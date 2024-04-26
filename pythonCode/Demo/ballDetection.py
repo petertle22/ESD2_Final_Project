@@ -255,11 +255,11 @@ def isServeInBound(ballPositionXYZ):
     timeOfImpact = findBounceT(ballPositionXYZ)
     startingX, startingY, startingZ, _ = ballPositionXYZ[0] # Get the starting position of the serve
 
-    bounceX, bounceY, bounceZ = None, None, None # Get the bounce location of the serve
+    bounceX, bounceY = None, None  # Get the bounce location of the serve
     for i in range(len(ballPositionXYZ)):
         thisTime = ballPositionXYZ[3, i]
         if timeOfImpact < thisTime:
-            bounceX, bounceY, bounceZ = ballPositionXYZ[:2, i]
+            bounceX, bounceY = ballPositionXYZ[:1, i]
             break
     
     if bounceX > startingX: # The serve is going right-to-left relative to the camera
@@ -278,4 +278,18 @@ def isServeInBound(ballPositionXYZ):
         else:
             return False
 
-        
+def isVolleyInBound(ballPositionXYZ):
+    timeOfImpact = findBounceT(ballPositionXYZ)
+    startingX, startingY, _, _ = ballPositionXYZ[0] # Get the starting position of the serve
+
+    bounceX, bounceY = None, None  # Get the bounce location of the serve
+    for i in range(len(ballPositionXYZ)):
+        thisTime = ballPositionXYZ[3, i]
+        if timeOfImpact < thisTime:
+            bounceX, bounceY = ballPositionXYZ[:1, i]
+            break
+    
+    if bounceX > startingX: # The volley is going right-to-left relative to the camera
+        return 0 <= bounceX and bounceX <= 11.885 and -5.485 <= bounceY and bounceY <= 5.485
+    else: # The volley is going left to right relative to the camera
+        return -11.885 <= bounceX and bounceX <= 0 and -5.485 <= bounceY and bounceY <= 5.485
