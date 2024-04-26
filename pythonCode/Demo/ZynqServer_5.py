@@ -36,7 +36,7 @@ SHOT_TYPE_VOLLEY = 2
 FPGA_ENABLE = True
 WINDSHIFT_ENABLE = False
 ACCEL_PROCESSING = True
-FRAME_REQUEST_TIMEOUT = 400
+FRAME_REQUEST_TIMEOUT = 1500
 T_SKIP = 20
 #----------------------------------------------------------------------------------------------------------
 # INITIALIZE FPGA
@@ -132,18 +132,18 @@ while True:
 
     elif cmd == RESULTS_CMD: # Send Results
         print('Results Requested...')
+
         # Calculate Corresponding Result
         if (resultsReady):
-            # 1. Filter Data
-            ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
-
-            # 2. Get Mode-Specific Results
+            # Get Mode-Specific Results
             if (mode == MODE_COEFF):  # Coeff Mode
                 print('Calculating Coefficient of Restitution...')
                 coeff = ball.getCoefficientOfRestitution(ballPositionXYZ) # Calculate coefficient
                 tcp.sendResult(mode, coeff, ballPositionXYZ, npSocket) # Send Coefficient
+
             elif mode == MODE_IN_OUT:  # Shot Mode
                 print('Calculating In/Out...')
+                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ, True)
                 if shotType == SHOT_TYPE_SERVE:
                     print("The serve is " + "in bounds!" if ball.isServeInBound(ballPositionXYZ) else "out of bounds!")
                 elif shotType == SHOT_TYPE_VOLLEY:
@@ -154,15 +154,12 @@ while True:
             else:  # DEBUGGING MODE
                 print('DEBUGGING RESULTS...')
                 # Send XYZ over t Information
+                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ, True)
                 tcp.sendBallXYZ(ballPositionXYZ, npSocket)
                 print('Bounce t:')
                 print(ball.findBounceT(ballPositionXYZ))
-                result = ball.getCoefficientOfRestitution(ballPositionXYZ)
-                print('Coeff:')
-                print(result)
 
             print('Results Sent')
-
         # Client has requested results at an invalid time
         else :
             print('Results Not Valid')

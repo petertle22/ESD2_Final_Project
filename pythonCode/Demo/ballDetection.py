@@ -113,7 +113,7 @@ def calcStereoXYZ(xLeft, yLeft, xRight, yRight):
 
     return X, Y, Z
 
-def filterStereoXYZ(ballPositionXYZ_RAW):
+def filterStereoXYZ(ballPositionXYZ_RAW, removeBounce):
     """
     filterStereoXYZ removes invalid entries in an array of ball XYZ positions over time.
     Current implementation:
@@ -123,17 +123,18 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
 
     :return : The filtered 2D numpy array
     """
-    # Choose which filter to use
+    # SETTINGS
     FILTER_SELECT = 1
+    REMOVE_INCORRECT = False
+    BUFFER_WIDTH = 0.4
+    CUTOFF_DEPTH = 0.2
 
-    # Simple filter
+    # GENERAL FILTER (Remove invalid entries)
     valid_columns = []
-
     # Iterate over each column (frame) in the array
     for i in range(ballPositionXYZ_RAW.shape[1]):
         if (-1 <= ballPositionXYZ_RAW[2, i]) and (ballPositionXYZ_RAW[2, i] <= 8):
             valid_columns.append(ballPositionXYZ_RAW[:, i])
-
     # Convert the list of arrays back into a 2D NumPy array
     if valid_columns:
         ballPositionXYZ = np.column_stack(valid_columns)
@@ -141,11 +142,27 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
         # If no valid columns, return an empty array with the same number of rows and zero columns
         ballPositionXYZ = np.empty((ballPositionXYZ_RAW.shape[0], 0))
 
+    # OPTIONAL: Improved filtering
     if (FILTER_SELECT == 1): #Polyfit, normalize strays to polyfit zone
         valid_columns = []
-        buffer_zone = 0.5
 
-        # Extract Z values and corresponding times
+        # Remove data before a potantial bounce
+        if (removeBounce):
+            # Find cutoff point just before a bounce
+            cutIndex = 0
+            found = False
+            for i in range (ballPositionXYZ.shape[1]):
+                depth = ballPositionXYZ[2, i]
+                if (not found):
+                    if (depth <= CUTOFF_DEPTH): # Arbitrary cutoff height
+                        found = True
+                    else:
+                        cutIndex += 1
+            ballPositionXYZ = ballPositionXYZ[:, 4:cutIndex]
+        
+
+
+        # Extract Z values and corresponding times BEFORE a potential bounce
         Z = ballPositionXYZ[2, :]
         t = ballPositionXYZ[3, :]
 
@@ -153,23 +170,24 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
         p = np.polyfit(t, Z, 2)  # Coefficients of the polynomial
 
         # Iterate over each column (frame) in the array
-        for i in range(ballPositionXYZ.shape[1]):
+        for i in range(len(Z)):
             # Calculate the upper and lower bounds of the buffer zone
-            Z_fit = np.polyval(p, ballPositionXYZ[3, i])  # Evaluated polynomial at current time
-            upper_bound = Z_fit + buffer_zone
-            lower_bound = Z_fit - buffer_zone
+            Z_fit = np.polyval(p, t[i])  # Evaluated polynomial at current time
+            upper_bound = Z_fit + BUFFER_WIDTH
+            lower_bound = Z_fit - BUFFER_WIDTH
 
-            REMOVE = False
-            if (REMOVE):
-                if (lower_bound <= ballPositionXYZ[2, i]) and (ballPositionXYZ[2, i] <= upper_bound):
+            if (REMOVE_INCORRECT):
+                if (lower_bound <= Z[i]) and (Z[i] <= upper_bound):
                     valid_columns.append(ballPositionXYZ[:, i])
             else:
-                if (lower_bound > ballPositionXYZ[2, i]):
-                    #ballPositionXYZ[2, i] = lower_bound
-                    ballPositionXYZ[2, i] = Z_fit
-                elif (upper_bound < ballPositionXYZ[2, i]):
-                    #ballPositionXYZ[2, i] = upper_bound
-                    ballPositionXYZ[2, i] = Z_fit
+                if (lower_bound > Z[i]):
+                    ballPositionXYZ[2, i] = lower_bound
+                    #ballPositionXYZ[2, i] = Z_fit
+                    #ballPositionXYZ[2, i] += BUFFER_WIDTH
+                elif (upper_bound < Z[i]):
+                    ballPositionXYZ[2, i] = upper_bound
+                    #ballPositionXYZ[2, i] = Z_fit
+                    #ballPositionXYZ[2, i] -= BUFFER_WIDTH
                 valid_columns.append(ballPositionXYZ[:, i])
 
         # Convert the list of arrays back into a 2D NumPy array
@@ -192,18 +210,22 @@ def findBounceT(ballPositionXYZ):
 
     :return : The floating point estimate of t[ms] at which Z = 0
     """
-    # Extract just the Z and t values for each frame
-    calculatedDepths = ballPositionXYZ[2, :]
-    t = ballPositionXYZ[3, :]
 
-    # Find cutoff point just before a bounce
-    index = 0
-    for depth in calculatedDepths:
-        if depth <= 0.1: # Arbitrary cutoff height
-            # Cut both arrays at this index (including this index)
-            calculatedDepths = calculatedDepths[:index + 1]
-            t = t[:index + 1]
-        index += 1
+    # Remove data before a potantial bounce
+        # Find cutoff point just before a bounce
+    cutIndex = 0
+    found = False
+    for i in range (ballPositionXYZ.shape[1]):
+        depth = ballPositionXYZ[2, i]
+        if (not found):
+            if (depth <= 0.1): # Arbitrary cutoff height
+                found = True
+            else:
+                cutIndex += 1
+    ballPositionXYZ_cut = ballPositionXYZ[:, :cutIndex]
+    # Extract just the Z and t values for each frame
+    calculatedDepths = ballPositionXYZ_cut[2, :]
+    t = ballPositionXYZ_cut[3, :]
 
     # MAV the data to smooth the curve
     window_size = 1  # Adjust this size to fit the smoothing level you need
@@ -255,7 +277,7 @@ def getCoefficientOfRestitution(ballPositionXYZ):
     positionArray, timeArray = ballPositionXYZ[2, :], ballPositionXYZ[3, :]
     timeOfImpact, idx, N = findBounceT(ballPositionXYZ), 0, len(positionArray)
 
-   # Find the index of the closest time in timeArray to the timeOfImpact
+    # Find the index of the closest time in timeArray to the timeOfImpact
     bounceFrame = np.argmin(np.abs(timeArray - timeOfImpact))
 
     # Split the arrays into before and after the bounce
