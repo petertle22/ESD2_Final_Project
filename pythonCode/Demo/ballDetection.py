@@ -142,8 +142,33 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
             # If no valid columns, return an empty array with the same number of rows and zero columns
             ballPositionXYZ = np.empty((ballPositionXYZ_RAW.shape[0], 0))
     elif (FILTER_SELECT == 1): #Polyfit, normalize strays to polyfit zone
-        pass
-        
+            buffer_zone = 0.5
+
+            # Extract Z values and corresponding times
+            Z = ballPositionXYZ_RAW[2]
+            t = ballPositionXYZ_RAW[3]
+
+            # Fit a second order polynomial to Z over time
+            p = np.polyfit(t, Z, 2)  # Coefficients of the polynomial
+            Z_fit = np.polyval(p, t)  # Evaluated polynomial at each time
+
+            # Calculate the upper and lower bounds of the buffer zone
+            upper_bound = Z_fit + buffer_zone
+            lower_bound = Z_fit - buffer_zone
+
+            # Find indices where the Z value is within the buffer zone
+            valid_indices = (Z >= lower_bound) & (Z <= upper_bound)
+            # Iterate over each column (frame) in the array
+            for i in range(ballPositionXYZ_RAW.shape[1]):
+                if (lower_bound <= ballPositionXYZ_RAW[2, i]) and (ballPositionXYZ_RAW[2, i] <= upper_bound):
+                    valid_columns.append(ballPositionXYZ_RAW[:, i])
+
+            # Convert the list of arrays back into a 2D NumPy array
+            if valid_columns:
+                ballPositionXYZ = np.column_stack(valid_columns)
+            else:
+                # If no valid columns, return an empty array with the same number of rows and zero columns
+                ballPositionXYZ = np.empty((ballPositionXYZ_RAW.shape[0], 0))
 
     return ballPositionXYZ
     
