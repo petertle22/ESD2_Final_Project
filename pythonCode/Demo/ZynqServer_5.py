@@ -32,7 +32,7 @@ MODE_IN_OUT = 2
 FPGA_ENABLE = True
 WINDSHIFT_ENABLE = False
 ACCEL_PROCESSING = True
-FRAME_REQUEST_TIMEOUT = 1000
+FRAME_REQUEST_TIMEOUT = 400
 T_SKIP = 20
 MATCH_TYPE_SERVE = 1
 MATCH_TYPE_VOLLEY = 2
@@ -76,12 +76,15 @@ while True:
                 print("All Frames Received")
                 break
             tcp.requestFrame(t, frame, npSocket) # Send request for frame at t
-            frame_data, raw_data = tcp.receiveFrame(npSocket) # Receive frame for t
-            # Access the individual images from frame
-            ballLeftGray = frame_data['ballLeftGray']
-            emptyLeftGray = frame_data['emptyLeftGray']
-            ballRightGray = frame_data['ballRightGray']
-            emptyRightGray = frame_data['emptyRightGray']
+            if(FPGA_ENABLE):
+                frame_data = tcp.receiveFrame(npSocket) # Receive frame for t
+                # Access the individual images from frame
+                ballLeftGray = frame_data['ballLeftGray']
+                emptyLeftGray = frame_data['emptyLeftGray']
+                ballRightGray = frame_data['ballRightGray']
+                emptyRightGray = frame_data['emptyRightGray']
+            else:
+                data = npSocket.receive() # Read data from client
 
             # Start Processing Current Frame
             start_time = time.time()  # start a timer from 0 to track processing time
@@ -95,11 +98,11 @@ while True:
 
             # 1. Process frames to isolate ball from background
             if (FPGA_ENABLE): # Processing needed by FPGA
-                camWriter.setFrame(raw_data) # Send stereo image for processing
+                camWriter.setFrame(data) # Send stereo image for processing
                 processedLeft,processedRight = camProcessed.getStereoGray() # Receieve processed stereo frames
             else: # No processing needed. Server Initially receieved processed images
                 processedLeft = ballLeftGray # => processedLeft = channel_0 image from client stream
-                processedRight = emptyLeftGray # => processedRight = channel_0 image from client stream
+                processedRight = emptyLeftGray # => processedRight = channel_1 image from client stream
 
             # 2. Centroid Detection
             ballFound, xLeft, yLeft = ball.find_centroid(processedLeft)

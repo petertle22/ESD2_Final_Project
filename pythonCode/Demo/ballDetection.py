@@ -142,6 +142,7 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
         ballPositionXYZ = np.empty((ballPositionXYZ_RAW.shape[0], 0))
 
     if (FILTER_SELECT == 1): #Polyfit, normalize strays to polyfit zone
+        valid_columns = []
         buffer_zone = 0.5
 
         # Extract Z values and corresponding times
@@ -157,8 +158,16 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
             Z_fit = np.polyval(p, ballPositionXYZ[3, i])  # Evaluated polynomial at current time
             upper_bound = Z_fit + buffer_zone
             lower_bound = Z_fit - buffer_zone
-            if (lower_bound <= ballPositionXYZ[2, i]) and (ballPositionXYZ[2, i] <= upper_bound):
-                valid_columns.append(ballPositionXYZ[:, i])
+
+            REMOVE = False
+            if (REMOVE):
+                if (lower_bound <= ballPositionXYZ[2, i]) and (ballPositionXYZ[2, i] <= upper_bound):
+                    valid_columns.append(ballPositionXYZ[:, i])
+            else:
+                if (lower_bound > ballPositionXYZ[2, i]):
+                    ballPositionXYZ[2, i] = lower_bound
+                elif (upper_bound < ballPositionXYZ[2, i]):
+                    ballPositionXYZ[2, i] = upper_bound
 
         # Convert the list of arrays back into a 2D NumPy array
         if valid_columns:
@@ -187,14 +196,14 @@ def findBounceT(ballPositionXYZ):
     # Find cutoff point just before a bounce
     index = 0
     for depth in calculatedDepths:
-        if depth <= 0.2: # Arbitrary cutoff height
+        if depth <= 0.1: # Arbitrary cutoff height
             # Cut both arrays at this index (including this index)
             calculatedDepths = calculatedDepths[:index + 1]
             t = t[:index + 1]
         index += 1
 
     # MAV the data to smooth the curve
-    window_size = 3  # Adjust this size to fit the smoothing level you need
+    window_size = 1  # Adjust this size to fit the smoothing level you need
     window = np.ones(window_size) / window_size
     calculatedDepths = np.convolve(calculatedDepths, window, 'same')
 
