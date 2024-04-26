@@ -126,46 +126,48 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
     # Choose which filter to use
     FILTER_SELECT = 1
 
-    if (FILTER_SELECT == 0): # Simple filter. Remove all extreme outliers
-        # Create a list to hold columns that pass the filter
-        valid_columns = []
+    # Simple filter
+    valid_columns = []
+
+    # Iterate over each column (frame) in the array
+    for i in range(ballPositionXYZ_RAW.shape[1]):
+        if (-1 <= ballPositionXYZ_RAW[2, i]) and (ballPositionXYZ_RAW[2, i] <= 8):
+            valid_columns.append(ballPositionXYZ_RAW[:, i])
+
+    # Convert the list of arrays back into a 2D NumPy array
+    if valid_columns:
+        ballPositionXYZ = np.column_stack(valid_columns)
+    else:
+        # If no valid columns, return an empty array with the same number of rows and zero columns
+        ballPositionXYZ = np.empty((ballPositionXYZ_RAW.shape[0], 0))
+
+    if (FILTER_SELECT == 1): #Polyfit, normalize strays to polyfit zone
+        buffer_zone = 0.5
+
+        # Extract Z values and corresponding times
+        Z = ballPositionXYZ[2, :]
+        t = ballPositionXYZ[3, :]
+
+        # Fit a second order polynomial to Z over time
+        p = np.polyfit(t, Z, 2)  # Coefficients of the polynomial
 
         # Iterate over each column (frame) in the array
-        for i in range(ballPositionXYZ_RAW.shape[1]):
-            if (-1 <= ballPositionXYZ_RAW[2, i]) and (ballPositionXYZ_RAW[2, i] <= 8):
-                valid_columns.append(ballPositionXYZ_RAW[:, i])
+        for i in range(ballPositionXYZ.shape[1]):
+            # Calculate the upper and lower bounds of the buffer zone
+            Z_fit = np.polyval(p, ballPositionXYZ[3, i])  # Evaluated polynomial at current time
+            upper_bound = Z_fit + buffer_zone
+            lower_bound = Z_fit - buffer_zone
+            if (lower_bound <= ballPositionXYZ[2, i]) and (ballPositionXYZ[2, i] <= upper_bound):
+                valid_columns.append(ballPositionXYZ[:, i])
 
         # Convert the list of arrays back into a 2D NumPy array
         if valid_columns:
-            ballPositionXYZ = np.column_stack(valid_columns)
+            filteredXYZ = np.column_stack(valid_columns)
         else:
             # If no valid columns, return an empty array with the same number of rows and zero columns
-            ballPositionXYZ = np.empty((ballPositionXYZ_RAW.shape[0], 0))
-    elif (FILTER_SELECT == 1): #Polyfit, normalize strays to polyfit zone
-            buffer_zone = 0.5
+            filteredXYZ = np.empty((ballPositionXYZ.shape[0], 0))
 
-            # Extract Z values and corresponding times
-            Z = ballPositionXYZ_RAW[2, :]
-            t = ballPositionXYZ_RAW[3, :]
-
-            # Fit a second order polynomial to Z over time
-            p = np.polyfit(t, Z, 2)  # Coefficients of the polynomial
-
-            # Iterate over each column (frame) in the array
-            for i in range(ballPositionXYZ_RAW.shape[1]):
-                # Calculate the upper and lower bounds of the buffer zone
-                Z_fit = np.polyval(p, ballPositionXYZ_RAW[3, i])  # Evaluated polynomial at current time
-                upper_bound = Z_fit + buffer_zone
-                lower_bound = Z_fit - buffer_zone
-                if (lower_bound <= ballPositionXYZ_RAW[2, i]) and (ballPositionXYZ_RAW[2, i] <= upper_bound):
-                    valid_columns.append(ballPositionXYZ_RAW[:, i])
-
-            # Convert the list of arrays back into a 2D NumPy array
-            if valid_columns:
-                ballPositionXYZ = np.column_stack(valid_columns)
-            else:
-                # If no valid columns, return an empty array with the same number of rows and zero columns
-                ballPositionXYZ = np.empty((ballPositionXYZ_RAW.shape[0], 0))
+        return filteredXYZ
 
     return ballPositionXYZ
     
