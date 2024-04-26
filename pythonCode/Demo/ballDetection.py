@@ -145,21 +145,18 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
             buffer_zone = 0.5
 
             # Extract Z values and corresponding times
-            Z = ballPositionXYZ_RAW[2]
-            t = ballPositionXYZ_RAW[3]
+            Z = ballPositionXYZ_RAW[2, :]
+            t = ballPositionXYZ_RAW[3, :]
 
             # Fit a second order polynomial to Z over time
             p = np.polyfit(t, Z, 2)  # Coefficients of the polynomial
-            Z_fit = np.polyval(p, t)  # Evaluated polynomial at each time
 
-            # Calculate the upper and lower bounds of the buffer zone
-            upper_bound = Z_fit + buffer_zone
-            lower_bound = Z_fit - buffer_zone
-
-            # Find indices where the Z value is within the buffer zone
-            valid_indices = (Z >= lower_bound) & (Z <= upper_bound)
             # Iterate over each column (frame) in the array
             for i in range(ballPositionXYZ_RAW.shape[1]):
+                # Calculate the upper and lower bounds of the buffer zone
+                Z_fit = np.polyval(p, ballPositionXYZ_RAW[3, i])  # Evaluated polynomial at current time
+                upper_bound = Z_fit + buffer_zone
+                lower_bound = Z_fit - buffer_zone
                 if (lower_bound <= ballPositionXYZ_RAW[2, i]) and (ballPositionXYZ_RAW[2, i] <= upper_bound):
                     valid_columns.append(ballPositionXYZ_RAW[:, i])
 
