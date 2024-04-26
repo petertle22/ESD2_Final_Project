@@ -168,6 +168,7 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
                     ballPositionXYZ[2, i] = lower_bound
                 elif (upper_bound < ballPositionXYZ[2, i]):
                     ballPositionXYZ[2, i] = upper_bound
+                valid_columns.append(ballPositionXYZ[:, i])
 
         # Convert the list of arrays back into a 2D NumPy array
         if valid_columns:
