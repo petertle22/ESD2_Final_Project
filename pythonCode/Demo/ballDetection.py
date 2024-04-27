@@ -146,7 +146,7 @@ def removeInvalidXYZ(ballPositionXYZ_RAW):
 
     return ballPositionXYZ
 
-def filterStereoXYZ(ballPositionXYZ):
+def filterStereoXYZ(ballPositionXYZ, shotType):
     """
     filterStereoXYZ removes/normalizes invalid entries in an array of ball XYZ positions over time.
     Current implementation:
@@ -166,10 +166,15 @@ def filterStereoXYZ(ballPositionXYZ):
     BUFFER_WIDTH = 0.4
     CUTOFF_DEPTH = 0.2
 
+
     # Select Filter
     if (FILTER_SELECT == 1): #Polyfit, normalize strays to polyfit zone
         # Initialize Variables
         valid_columns = []
+        if (shotType == 2):
+            cutMinT = 400
+        else:
+            cutMinT = 100
 
         # 1. REMOVE DATA NEAR/AFTER POTENTIAL BOUNCE
         cutIndex = 0 # Iterate through Z values until you reach cutoff depth
@@ -177,9 +182,9 @@ def filterStereoXYZ(ballPositionXYZ):
         for i in range (ballPositionXYZ.shape[1]):
             depth = ballPositionXYZ[2, i] # Get this depth
             # Only look for cutIndex if it is not found yet AND there is no chnace that we are looking at a volley starting near the ground
-            if (not found) and (ballPositionXYZ[3, i] > 100):
+            if (not found):
                 # Does this depth meet the cutoff depth
-                if (depth <= CUTOFF_DEPTH): # Arbitrary cutoff height
+                if (depth <= CUTOFF_DEPTH) and (ballPositionXYZ[3, i] > cutMinT): # Arbitrary cutoff height
                     found = True # Found cutIndex, no need to continue to look
                 else:
                     cutIndex += 1
@@ -402,7 +407,7 @@ def getLineDecision(ballPositionXYZ, matchType, shotType):
         result = isVolleyInBound(startX, startY, bounceX, bounceY, matchType)
 
     # Print Answer to user
-    print("Shot bounced at (%d, %d)" % (bounceX, bounceY))
+    print("Shot bounced at (%f, %f)" % (bounceX, bounceY))
 
     # Format boolean into Double for tcp protocol 
     if result:

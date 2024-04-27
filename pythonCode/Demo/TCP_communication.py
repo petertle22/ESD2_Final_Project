@@ -143,7 +143,7 @@ def sendResult(mode, result, npSocket):
     if (mode == 1 or mode == 2): # Only process valid mode results
         # Notify client which type of result this is
         result_msg = np.array(mode, dtype=np.uint32)  # Formatting
-        npSocket.send(mode)
+        npSocket.send(result_msg)
         # Send Result as Double 
         result_msg = np.array(result, dtype=np.double)  # Formatting
         npSocket.send(result_msg)

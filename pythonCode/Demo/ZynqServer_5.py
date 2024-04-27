@@ -37,17 +37,16 @@ FPGA_ENABLE = False
 CV2_PREPROCESS_ENABLE = True
 WINDSHIFT_ENABLE = False
 ACCEL_PROCESSING = True
-FRAME_REQUEST_TIMEOUT = 600
+FRAME_REQUEST_TIMEOUT = 1400
 T_SKIP = 20
 PROCESS_T = 3
-FIXED_PROCESS_TIME = False
+FIXED_PROCESS_TIME = True
 #----------------------------------------------------------------------------------------------------------
 # INITIALIZE FPGA
 if (FPGA_ENABLE):
     print("Initializing FPGA...")
     camProcessed, camFeedthrough, camWriter = fpga.initFPGA()
     print("Initialized.")
-
 
 # Open Server
 npSocket = NumpySocket()
@@ -102,13 +101,13 @@ while True:
                 pass
 
             # 1. Process frames to isolate ball from background
-            if (FPGA_ENABLE): # Processing needed by FPGA
+            if (CV2_PREPROCESS_ENABLE): # Background subtract in cv2
+                processedLeft, processedRight = ball.process_images(ballLeftGray, emptyLeftGray, ballRightGray, emptyRightGray)
+            elif (FPGA_ENABLE): # Processing needed by FPGA
                 camWriter.setFrame(data) # Send stereo image for processing
                 processedLeft,processedRight = camProcessed.getStereoGray() # Receieve processed stereo frames
                 processedLeft = np.ascontiguousarray(processedLeft, dtype=np.uint8)
                 processedRight = np.ascontiguousarray(processedRight, dtype=np.uint8)
-            elif (CV2_PREPROCESS_ENABLE): # Background subtract in cv2
-                processedLeft, processedRight = ball.process_images(ballLeftGray, emptyLeftGray, ballRightGray, emptyRightGray)
             else: # No processing needed. Server Initially receieved processed images
                 processedLeft = ballLeftGray # => processedLeft = channel_0 image from client stream
                 processedRight = emptyLeftGray # => processedRight = channel_1 image from client stream
@@ -158,14 +157,20 @@ while True:
 
             elif mode == MODE_IN_OUT:  # Shot Mode
                 print('Calculating In/Out...')
-                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
+                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ, shotType)
                 lineDecision, _, _ = ball.getLineDecision(ballPositionXYZ, matchType, shotType) # Calculate In/Out
                 tcp.sendResult(mode, lineDecision, npSocket) # Send In/Out
+
+
+                bounceX, bounceY, bounceZ = ball.getBallTrajectory(ballPositionXYZ)
+                tcp.sendTrajectoryCoeff(bounceX, bounceY, bounceZ, ball.findBounceT(ballPositionXYZ), npSocket)
+                print('Bounce t:')
+                print(ball.findBounceT(ballPositionXYZ))
 
             else:  # DEBUGGING MODE
                 print('DEBUGGING RESULTS...')
                 # Send XYZ over t Information
-                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
+                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ, shotType)
                 #tcp.sendBallXYZ(ballPositionXYZ, npSocket)
                 bounceX, bounceY, bounceZ = ball.getBallTrajectory(ballPositionXYZ)
                 tcp.sendTrajectoryCoeff(bounceX, bounceY, bounceZ, ball.findBounceT(ballPositionXYZ), npSocket)
