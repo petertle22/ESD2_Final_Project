@@ -39,7 +39,7 @@ ACCEL_PROCESSING = True
 FRAME_REQUEST_TIMEOUT = 600
 T_SKIP = 20
 PROCESS_T = 3
-FIXED_PROCESS_TIME = False
+FIXED_PROCESS_TIME = True
 #----------------------------------------------------------------------------------------------------------
 # INITIALIZE FPGA
 if (FPGA_ENABLE):
@@ -134,6 +134,7 @@ while True:
 
         # All Frames Processed
         print("Exiting process frames loop")
+        cv2.imwrite('Left.jpg', processedLeft)
         resultsReady = True
         tcp.sendCMD(STOP_CMD, npSocket)  # Stop Command: Tell Client to stop sending frames and instead request the result back
         print('Sent Stop CMD')
