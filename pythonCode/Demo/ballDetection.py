@@ -28,8 +28,9 @@ def process_images(ballLeftGray, emptyLeftGray, ballRightGray, emptyRightGray):
     diffRight = cv2.absdiff(ballRightGray, emptyRightGray)
 
     # Binarization of the subtracted images
-    _, processedLeft = cv2.threshold(diffLeft, 100, 255, cv2.THRESH_BINARY)
-    _, processedRight = cv2.threshold(diffRight, 100, 255, cv2.THRESH_BINARY)
+    threshold = int(0.11 * 255)
+    _, processedLeft = cv2.threshold(diffLeft, threshold, 255, cv2.THRESH_BINARY)
+    _, processedRight = cv2.threshold(diffRight, threshold, 255, cv2.THRESH_BINARY)
 
     # Convert images to uint8 if necessary
     processedLeft = np.uint8(processedLeft)

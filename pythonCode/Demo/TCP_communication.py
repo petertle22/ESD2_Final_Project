@@ -49,8 +49,8 @@ def receiveFrame(npSocket):
     return {
         'ballLeftGray': np.ascontiguousarray(stereoImage[:, :, 0], dtype=np.uint8),
         'emptyLeftGray': np.ascontiguousarray(stereoImage[:, :, 1], dtype=np.uint8),
-        'ballRightGray': np.ascontiguousarray(stereoImage[:, :, 4], dtype=np.uint8),
-        'emptyRightGray': np.ascontiguousarray(stereoImage[:, :, 5], dtype=np.uint8)
+        'ballRightGray': np.ascontiguousarray(stereoImage[:, :, 2], dtype=np.uint8),
+        'emptyRightGray': np.ascontiguousarray(stereoImage[:, :, 3], dtype=np.uint8)
     }
 
 def sendCMD(cmd, npSocket):

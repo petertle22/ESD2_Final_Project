@@ -34,7 +34,7 @@ SHOT_TYPE_VOLLEY = 2
 
 # SETTINGS
 FPGA_ENABLE = False
-CV2_PREPROCESS_ENABLE = False
+CV2_PREPROCESS_ENABLE = True
 WINDSHIFT_ENABLE = False
 ACCEL_PROCESSING = True
 FRAME_REQUEST_TIMEOUT = 600
@@ -107,8 +107,8 @@ while True:
                 processedLeft,processedRight = camProcessed.getStereoGray() # Receieve processed stereo frames
                 processedLeft = np.ascontiguousarray(processedLeft, dtype=np.uint8)
                 processedRight = np.ascontiguousarray(processedRight, dtype=np.uint8)
-            elif (CV2_PREPROCESS_ENABLE):
-                pass
+            elif (CV2_PREPROCESS_ENABLE): # Background subtract in cv2
+                processedLeft, processedRight = ball.process_images(ballLeftGray, emptyLeftGray, ballRightGray, emptyRightGray)
             else: # No processing needed. Server Initially receieved processed images
                 processedLeft = ballLeftGray # => processedLeft = channel_0 image from client stream
                 processedRight = emptyLeftGray # => processedRight = channel_1 image from client stream
