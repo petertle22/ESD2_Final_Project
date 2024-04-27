@@ -44,7 +44,7 @@ MATCH_TYPE = '2'; % 1 -> singles mode, -> 2 doubles mode
 write(client, MATCH_TYPE);
 flush(client);
 
-SHOT_TYPE = '2';  % 1 -> serve mode, 2 -> volley mode
+SHOT_TYPE = '1';  % 1 -> serve mode, 2 -> volley mode
 write(client, SHOT_TYPE);
 flush(client);
 
@@ -71,7 +71,7 @@ while 1
     end
 
     % 2. Retrieve Left/Right Unity images at time t
-    path = '../datFiles/volley3.dat';
+    path = '../datFiles/serve1.dat';
     errorCode = MoveTennisBall(request, path);
 
     if errorCode == 0 
