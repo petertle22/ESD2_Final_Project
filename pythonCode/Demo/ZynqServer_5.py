@@ -90,6 +90,10 @@ while True:
             else:
                 data = npSocket.receive() # Read data from client
 
+            if np.all(emptyLeftGray == 0) and np.all(emptyRightGray == 0):
+                print("Requested for frame out of bounds for time ", t)
+                break
+
             # Start Processing Current Frame
             start_time = time.time()  # start a timer from 0 to track processing time
             # 0. Adapt stereo background to possible wind shifts in new stereo image
