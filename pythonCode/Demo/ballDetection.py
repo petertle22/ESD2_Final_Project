@@ -187,6 +187,8 @@ def filterStereoXYZ(ballPositionXYZ):
         # Extract Z values and corresponding times BEFORE a potential bounce
         Z = ballPositionXYZ[2, :]
         t = ballPositionXYZ[3, :]
+        print("Num Valid Frames:")
+        print(len(Z))
 
         # Fit a second order polynomial to Z over time
         p = np.polyfit(t, Z, 2)  # Coefficients of the polynomial
