@@ -138,18 +138,23 @@ while True:
             # Get Mode-Specific Results
             if (mode == MODE_COEFF):  # Coeff Mode
                 print('Calculating Coefficient of Restitution...')
+                ballPositionXYZ = ball.filterStereoXYZ_Coeff(ballPositionXYZ)
                 coeff = ball.getCoefficientOfRestitution(ballPositionXYZ) # Calculate coefficient
                 tcp.sendResult(mode, coeff, ballPositionXYZ, npSocket) # Send Coefficient
 
             elif mode == MODE_IN_OUT:  # Shot Mode
                 print('Calculating In/Out...')
-                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ, True)
+                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
+                lineDcison = ball.getLineDecision(ballPositionXYZ, matchType, shotType) # Calculate In/Out
+                tcp.sendResult(mode, lineDcison, ballPositionXYZ, npSocket) # Send In/Out
+                """
                 if shotType == SHOT_TYPE_SERVE:
                     print("The serve is " + "in bounds!" if ball.isServeInBound(ballPositionXYZ) else "out of bounds!")
                 elif shotType == SHOT_TYPE_VOLLEY:
                     print("The volley is " + "in bounds!" if ball.isVolleyInBound(ballPositionXYZ) else "out of bounds!")
                 else:
                     print('No mode selection made for determining in/out...')
+                """
 
             else:  # DEBUGGING MODE
                 print('DEBUGGING RESULTS...')
