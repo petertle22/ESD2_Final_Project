@@ -94,8 +94,6 @@ while True:
 
             # Start Processing Current Frame
             start_time = time.time()  # start a timer from 0 to track processing time
-            print("Time Check")
-            print(start_time)
             # 0. Adapt stereo background to possible wind shifts in new stereo image
             if (WINDSHIFT_ENABLE): # Wind present, may shift camera around
                 # IMPLEMENT 
@@ -163,7 +161,7 @@ while True:
             else:  # DEBUGGING MODE
                 print('DEBUGGING RESULTS...')
                 # Send XYZ over t Information
-                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ, True)
+                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
                 tcp.sendBallXYZ(ballPositionXYZ, npSocket)
                 print('Bounce t:')
                 print(ball.findBounceT(ballPositionXYZ))
