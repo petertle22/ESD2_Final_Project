@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
 % Host Interface Script
 % 
-% Generated with MATLAB 9.14 (R2023a) at 14:02:43 on 26/04/2024.
+% Generated with MATLAB 9.14 (R2023a) at 11:42:25 on 27/04/2024.
 % This script was created for the IP Core generated from design 'ImageProcessingNoShift'.
 % 
 % Use this script to access DUT ports in the design that were mapped to compatible IP core interfaces.
@@ -17,7 +17,7 @@
 % If you need to change login parameters for your board, using the following syntax:
 % hProcessor = xilinxsoc(ipAddress, username, password);
 hProcessor = xilinxsoc();
-% programFPGA(hProcessor, "hdl_prj_2\vivado_ip_prj\vivado_prj.runs\impl_1\design_1_wrapper.bit", "");
+% programFPGA(hProcessor, "S:\Documents\ESD2_Final_Project\FPGA_stuff\hdl_prj3\vivado_ip_prj\vivado_prj.runs\impl_1\design_1_wrapper.bit", "");
 
 %% Create fpga object
 hFPGA = fpga(hProcessor);

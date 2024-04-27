@@ -70,7 +70,7 @@ while 1
     end
 
     % 2. Retrieve Left/Right Unity images at time t
-    path = '../datFiles/serve4.dat';
+    path = '../datFiles/serve5.dat';
     %path = '../datFiles/bounce.dat';
     errorCode = MoveTennisBall(request, path);
 
@@ -131,86 +131,153 @@ end
 write(client,'2'); %Transfer Protocol
 flush(client);
 
-% Receive calculated X,Y,Z position
-numFrames = read(client, 1, 'uint32');
-calc_X = read(client, numFrames, 'double');
-calc_Y = read(client, numFrames, 'double');
-calc_Z = read(client, numFrames, 'double');
-t = read(client, numFrames, 'uint32');
-t = double(t);
-disp('here')
+% Receive calculated X,Y,Z trajectories
+xCoeff = read(client, 2, 'double');
+yCoeff = read(client, 2, 'double');
+zLen = read(client, 1, 'uint32');
+zCoeff = read(client, zLen, 'double');
+bounceT = read(client, 1, 'double');
+t = 1:ceil(bounceT); % Discrete steps of 1 ms
 
-for i = 1:numFrames
-    real_X = zeros(size(calc_X));
-    real_Y = zeros(size(calc_X));
-    real_Z = zeros(size(calc_X));
-    ballData = load(path);
+% Populate calculated trajectory
+% Evaluate polynomials
+poly_X = polyval(xCoeff, t); % Flip to use polyval correctly
+poly_Y = polyval(yCoeff, t);
+poly_Z = polyval(zCoeff, t);
 
-    % Populate actualDepths using indices from calculatedDepths_t
-    for i = 1:length(t)
-        t_index = t(i);
-        if t_index <= size(ballData, 1)
-            real_X(i) = ballData(t_index, 3);
-            real_Y(i) = ballData(t_index, 1);
-            real_Z(i) = ballData(t_index, 2);
-        else
-            error('Index exceeds the number of rows in ballData file.');
-        end
+% Populate actual correct results
+ballData = load(path);
+real_X = NaN(1, length(t));
+real_Y = NaN(1, length(t));
+real_Z = NaN(1, length(t));
+for i = 1:length(t)
+    if i <= size(ballData, 1)
+        real_X(i) = ballData(i, 3);
+        real_Y(i) = ballData(i, 1);
+        real_Z(i) = ballData(i, 2);
+    else
+        error('Index exceeds the number of rows in ballData file.');
     end
 end
 
-% Plot 3D coordinates
+% Plotting
 figure;
-plot3(calc_X, calc_Y, calc_Z, 'ro'); % Plot calculated positions in red
-hold on;
-plot3(real_X, real_Y, real_Z, 'bo'); % Plot real positions in blue
-legend('Calculated Position', 'Real Position');
-title('3D Plot of Real and Calculated Positions');
-xlabel('X Position');
-ylabel('Y Position');
-zlabel('Z Position');
-grid on;
-
-% Polynomial fit for X, Y, and Z coordinates
-coeff_X = polyfit(t, calc_X, 2);
-coeff_Y = polyfit(t, calc_Y, 1);
-coeff_Z = polyfit(t, calc_Z, 1);
-
-% Plot X coordinate with polynomial fit
-figure;
-plot(t, calc_X, 'r'); % Plot calculated X positions in red
+subplot(3, 1, 1);
+plot(t, poly_X, 'r'); % Plot calculated X positions in red
 hold on;
 plot(t, real_X, 'b'); % Plot real X positions in blue
-plot(t, polyval(coeff_X, t), 'm--'); % Plot polynomial fit in green dashed line
-legend('Calculated X', 'Real X', 'Polyfit X');
+legend('Calculated X', 'Real X');
 title('Comparison of Calculated and Real X Positions Over Time');
-xlabel('Time');
-ylabel('X Position');
+xlabel('Time, ms');
+ylabel('X Position, m');
 grid on;
+hold off;
 
-% Plot Y coordinate with polynomial fit
-figure;
-plot(t, calc_Y, 'r'); % Plot calculated Y positions in red
+subplot(3, 1, 2);
+plot(t, poly_Y, 'r'); % Plot calculated Y positions in red
 hold on;
-plot(t, real_Y, 'b'); % Plot real Y positions in blue
-plot(t, polyval(coeff_Y, t), 'm--'); % Plot polynomial fit in green dashed line
-legend('Calculated Y', 'Real Y', 'Polyfit Y');
+plot(t, real_Y, 'b'); % Plot real X positions in blue
+legend('Calculated Y', 'Real Y');
 title('Comparison of Calculated and Real Y Positions Over Time');
-xlabel('Time');
-ylabel('Y Position');
+xlabel('Time, ms');
+ylabel('Y Position, m');
 grid on;
+hold off;
 
-% Plot Z coordinate with polynomial fit
-figure;
-plot(t, calc_Z, 'r'); % Plot calculated Z positions in red
+subplot(3, 1, 3);
+plot(t, poly_Z, 'r'); % Plot calculated Z positions in red
 hold on;
 plot(t, real_Z, 'b'); % Plot real Z positions in blue
-plot(t, polyval(coeff_Z, t), 'm--'); % Plot polynomial fit in green dashed line
-legend('Calculated Z', 'Real Z', 'Polyfit Z');
+legend('Calculated Z', 'Real Z');
 title('Comparison of Calculated and Real Z Positions Over Time');
-xlabel('Time');
-ylabel('Z Position');
+xlabel('Time, ms');
+ylabel('Z Position, m');
 grid on;
+hold off;
+
+
+
+
+% % Receive calculated X,Y,Z position
+% numFrames = read(client, 1, 'uint32');
+% calc_X = read(client, numFrames, 'double');
+% calc_Y = read(client, numFrames, 'double');
+% calc_Z = read(client, numFrames, 'double');
+% t = read(client, numFrames, 'uint32');
+% t = double(t);
+% disp('here')
+% 
+% for i = 1:numFrames
+%     real_X = zeros(size(calc_X));
+%     real_Y = zeros(size(calc_X));
+%     real_Z = zeros(size(calc_X));
+%     ballData = load(path);
+% 
+%     % Populate actualDepths using indices from calculatedDepths_t
+%     for i = 1:length(t)
+%         t_index = t(i);
+%         if t_index <= size(ballData, 1)
+%             real_X(i) = ballData(t_index, 3);
+%             real_Y(i) = ballData(t_index, 1);
+%             real_Z(i) = ballData(t_index, 2);
+%         else
+%             error('Index exceeds the number of rows in ballData file.');
+%         end
+%     end
+% end
+% 
+% % Plot 3D coordinates
+% figure;
+% plot3(calc_X, calc_Y, calc_Z, 'ro'); % Plot calculated positions in red
+% hold on;
+% plot3(real_X, real_Y, real_Z, 'bo'); % Plot real positions in blue
+% legend('Calculated Position', 'Real Position');
+% title('3D Plot of Real and Calculated Positions');
+% xlabel('X Position');
+% ylabel('Y Position');
+% zlabel('Z Position');
+% grid on;
+% 
+% % Polynomial fit for X, Y, and Z coordinates
+% coeff_X = polyfit(t, calc_X, 1);
+% coeff_Y = polyfit(t, calc_Y, 1);
+% coeff_Z = polyfit(t, calc_Z, 2);
+% 
+% % Plot X coordinate with polynomial fit
+% figure;
+% plot(t, calc_X, 'r'); % Plot calculated X positions in red
+% hold on;
+% plot(t, real_X, 'b'); % Plot real X positions in blue
+% plot(t, polyval(coeff_X, t), 'm--'); % Plot polynomial fit in green dashed line
+% legend('Calculated X', 'Real X', 'Polyfit X');
+% title('Comparison of Calculated and Real X Positions Over Time');
+% xlabel('Time');
+% ylabel('X Position');
+% grid on;
+% 
+% % Plot Y coordinate with polynomial fit
+% figure;
+% plot(t, calc_Y, 'r'); % Plot calculated Y positions in red
+% hold on;
+% plot(t, real_Y, 'b'); % Plot real Y positions in blue
+% plot(t, polyval(coeff_Y, t), 'm--'); % Plot polynomial fit in green dashed line
+% legend('Calculated Y', 'Real Y', 'Polyfit Y');
+% title('Comparison of Calculated and Real Y Positions Over Time');
+% xlabel('Time');
+% ylabel('Y Position');
+% grid on;
+% 
+% % Plot Z coordinate with polynomial fit
+% figure;
+% plot(t, calc_Z, 'r'); % Plot calculated Z positions in red
+% hold on;
+% plot(t, real_Z, 'b'); % Plot real Z positions in blue
+% plot(t, polyval(coeff_Z, t), 'm--'); % Plot polynomial fit in green dashed line
+% legend('Calculated Z', 'Real Z', 'Polyfit Z');
+% title('Comparison of Calculated and Real Z Positions Over Time');
+% xlabel('Time');
+% ylabel('Z Position');
+% grid on;
 
 
 write(client,'9999');

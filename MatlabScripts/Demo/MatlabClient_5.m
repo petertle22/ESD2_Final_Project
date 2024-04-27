@@ -19,6 +19,7 @@ emptyRightGray = preprocessImage(emptyRightImage);
 
 
 %Connect to sever;
+%server_ip   = '129.21.42.178';     % IP address of the server -NEEDS CHANGE
 server_ip   = '129.21.41.4';     % IP address of the server -NEEDS CHANGE
 
 % NO CHNAGE
@@ -35,15 +36,15 @@ write(client,'0'); %Transfer Protocol
 flush(client);
 
 % For now, just leave values as is
-MODE = '7';       % 1 -> coefficient of restitution, 2 -> ball is inside or out
+MODE = '2';       % 1 -> coefficient of restitution, 2 -> ball is inside or out
 write(client, MODE);
 flush(client);
 
-MATCH_TYPE = '3'; % 1 -> singles mode, -> 2 doubles mode
+MATCH_TYPE = '2'; % 1 -> singles mode, -> 2 doubles mode
 write(client, MATCH_TYPE);
 flush(client);
 
-SHOT_TYPE = '5';  % 1 -> serve mode, 2 -> volley mode
+SHOT_TYPE = '2';  % 1 -> serve mode, 2 -> volley mode
 write(client, SHOT_TYPE);
 flush(client);
 
@@ -70,7 +71,7 @@ while 1
     end
 
     % 2. Retrieve Left/Right Unity images at time t
-    path = '../datFiles/volley2.dat';
+    path = '../datFiles/volley3.dat';
     errorCode = MoveTennisBall(request, path);
 
     if errorCode == 0 
@@ -86,12 +87,12 @@ while 1
 
         imageStack(:,:,1) = BallLeftGray;
         imageStack(:,:,2) = emptyLeftGray;
-        imageStack(:,:,3) = BallLeftGray;
-        imageStack(:,:,4) = emptyLeftGray;
+        imageStack(:,:,3) = BallRightGray;
+        imageStack(:,:,4) = emptyRightGray;
         imageStack(:,:,5) = emptyRightGray;
-        imageStack(:,:,6) = ballRightGray;
+        imageStack(:,:,6) = BallRightGray;
         imageStack(:,:,7) = emptyLeftGray;
-        imageStack(:,:,8) = ballLeftGray;
+        imageStack(:,:,8) = BallLeftGray;
 
         imageStack = permute(imageStack,[3 2 1]);
         write(client,imageStack(:)); %SEND
@@ -124,80 +125,150 @@ end
 write(client,'2'); %Transfer Protocol
 flush(client);
 
-% Receive calculated X,Y,Z position
-numFrames = read(client, 1, 'uint32');
-calc_X = read(client, numFrames, 'double');
-calc_Y = read(client, numFrames, 'double');
-calc_Z = read(client, numFrames, 'double');
-t = read(client, numFrames, 'uint32');
-disp('here')
+receiveMode = read(client, 1, 'uint32');
+if receiveMode == 2
+    resultRead = read(client, 1, 'double')
+end
 
-for i = 1:numFrames
-    real_X = zeros(size(calc_X));
-    real_Y = zeros(size(calc_X));
-    real_Z = zeros(size(calc_X));
-    ballData = load(path);
+% Receive calculated X,Y,Z trajectories
+xCoeff = read(client, 2, 'double');
+yCoeff = read(client, 2, 'double');
+zLen = read(client, 1, 'uint32');
+zCoeff = read(client, zLen, 'double');
+bounceT = read(client, 1, 'double');
+t = 1:ceil(bounceT); % Discrete steps of 1 ms
 
-    % Populate actualDepths using indices from calculatedDepths_t
-    for i = 1:length(t)
-        t_index = t(i);
-        if t_index <= size(ballData, 1)
-            real_X(i) = ballData(t_index, 3);
-            real_Y(i) = ballData(t_index, 1);
-            real_Z(i) = ballData(t_index, 2);
-        else
-            error('Index exceeds the number of rows in ballData file.');
-        end
+% Populate calculated trajectory
+% Evaluate polynomials
+poly_X = polyval(xCoeff, t); % Flip to use polyval correctly
+poly_Y = polyval(yCoeff, t);
+poly_Z = polyval(zCoeff, t);
+
+% Populate actual correct results
+ballData = load(path);
+real_X = NaN(1, length(t));
+real_Y = NaN(1, length(t));
+real_Z = NaN(1, length(t));
+for i = 1:length(t)
+    if i <= size(ballData, 1)
+        real_X(i) = ballData(i, 3);
+        real_Y(i) = ballData(i, 1);
+        real_Z(i) = ballData(i, 2);
+    else
+        error('Index exceeds the number of rows in ballData file.');
     end
 end
 
-% Plot 3D coordinates
+% Plotting
 figure;
-plot3(calc_X, calc_Y, calc_Z, 'ro'); % Plot calculated positions in red
-hold on;
-plot3(real_X, real_Y, real_Z, 'bo'); % Plot real positions in blue
-legend('Calculated Position', 'Real Position');
-title('3D Plot of Real and Calculated Positions');
-xlabel('X Position');
-ylabel('Y Position');
-zlabel('Z Position');
-grid on;
-
-
-% Plot X coordinate
-figure;
-plot(t, calc_X, 'r'); % Plot calculated X positions in red
+subplot(3, 1, 1);
+plot(t, poly_X, 'r'); % Plot calculated X positions in red
 hold on;
 plot(t, real_X, 'b'); % Plot real X positions in blue
 legend('Calculated X', 'Real X');
 title('Comparison of Calculated and Real X Positions Over Time');
-xlabel('Time');
-ylabel('X Position');
+xlabel('Time, ms');
+ylabel('X Position, m');
 grid on;
+hold off;
 
-
-% Plot Y coordinate
-figure;
-plot(t, calc_Y, 'r'); % Plot calculated Y positions in red
+subplot(3, 1, 2);
+plot(t, poly_Y, 'r'); % Plot calculated Y positions in red
 hold on;
-plot(t, real_Y, 'b'); % Plot real Y positions in blue
+plot(t, real_Y, 'b'); % Plot real X positions in blue
 legend('Calculated Y', 'Real Y');
 title('Comparison of Calculated and Real Y Positions Over Time');
-xlabel('Time');
-ylabel('Y Position');
+xlabel('Time, ms');
+ylabel('Y Position, m');
 grid on;
+hold off;
 
-
-% Plot Z coordinate
-figure;
-plot(t, calc_Z, 'r'); % Plot calculated Z positions in red
+subplot(3, 1, 3);
+plot(t, poly_Z, 'r'); % Plot calculated Z positions in red
 hold on;
 plot(t, real_Z, 'b'); % Plot real Z positions in blue
 legend('Calculated Z', 'Real Z');
 title('Comparison of Calculated and Real Z Positions Over Time');
-xlabel('Time');
-ylabel('Z Position');
+xlabel('Time, ms');
+ylabel('Z Position, m');
 grid on;
+hold off;
+
+
+% % Receive calculated X,Y,Z position
+% numFrames = read(client, 1, 'uint32');
+% calc_X = read(client, numFrames, 'double');
+% calc_Y = read(client, numFrames, 'double');
+% calc_Z = read(client, numFrames, 'double');
+% t = read(client, numFrames, 'uint32');
+% disp('here')
+% 
+% for i = 1:numFrames
+%     real_X = zeros(size(calc_X));
+%     real_Y = zeros(size(calc_X));
+%     real_Z = zeros(size(calc_X));
+%     ballData = load(path);
+% 
+%     % Populate actualDepths using indices from calculatedDepths_t
+%     for i = 1:length(t)
+%         t_index = t(i);
+%         if t_index <= size(ballData, 1)
+%             real_X(i) = ballData(t_index, 3);
+%             real_Y(i) = ballData(t_index, 1);
+%             real_Z(i) = ballData(t_index, 2);
+%         else
+%             error('Index exceeds the number of rows in ballData file.');
+%         end
+%     end
+% end
+% 
+% % Plot 3D coordinates
+% figure;
+% plot3(calc_X, calc_Y, calc_Z, 'ro'); % Plot calculated positions in red
+% hold on;
+% plot3(real_X, real_Y, real_Z, 'bo'); % Plot real positions in blue
+% legend('Calculated Position', 'Real Position');
+% title('3D Plot of Real and Calculated Positions');
+% xlabel('X Position');
+% ylabel('Y Position');
+% zlabel('Z Position');
+% grid on;
+% 
+% 
+% % Plot X coordinate
+% figure;
+% plot(t, calc_X, 'r'); % Plot calculated X positions in red
+% hold on;
+% plot(t, real_X, 'b'); % Plot real X positions in blue
+% legend('Calculated X', 'Real X');
+% title('Comparison of Calculated and Real X Positions Over Time');
+% xlabel('Time');
+% ylabel('X Position');
+% grid on;
+% 
+% 
+% % Plot Y coordinate
+% figure;
+% plot(t, calc_Y, 'r'); % Plot calculated Y positions in red
+% hold on;
+% plot(t, real_Y, 'b'); % Plot real Y positions in blue
+% legend('Calculated Y', 'Real Y');
+% title('Comparison of Calculated and Real Y Positions Over Time');
+% xlabel('Time');
+% ylabel('Y Position');
+% grid on;
+% 
+% 
+% % Plot Z coordinate
+% figure;
+% plot(t, calc_Z, 'r'); % Plot calculated Z positions in red
+% hold on;
+% plot(t, real_Z, 'b'); % Plot real Z positions in blue
+% legend('Calculated Z', 'Real Z');
+% title('Comparison of Calculated and Real Z Positions Over Time');
+% xlabel('Time');
+% ylabel('Z Position');
+% grid on;
 
 
 write(client,'9999');
