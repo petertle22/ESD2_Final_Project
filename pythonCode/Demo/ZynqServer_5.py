@@ -36,7 +36,7 @@ SHOT_TYPE_VOLLEY = 2
 FPGA_ENABLE = True
 WINDSHIFT_ENABLE = False
 ACCEL_PROCESSING = True
-FRAME_REQUEST_TIMEOUT = 1500
+FRAME_REQUEST_TIMEOUT = 600
 T_SKIP = 20
 PROCESS_T = 3
 FIXED_PROCESS_TIME = False
@@ -106,6 +106,8 @@ while True:
             if (FPGA_ENABLE): # Processing needed by FPGA
                 camWriter.setFrame(data) # Send stereo image for processing
                 processedLeft,processedRight = camProcessed.getStereoGray() # Receieve processed stereo frames
+                processedLeft = np.ascontiguousarray(processedLeft, dtype=np.uint8)
+                processedRight = np.ascontiguousarray(processedRight, dtype=np.uint8)
             else: # No processing needed. Server Initially receieved processed images
                 processedLeft = ballLeftGray # => processedLeft = channel_0 image from client stream
                 processedRight = emptyLeftGray # => processedRight = channel_1 image from client stream
