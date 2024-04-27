@@ -70,7 +70,8 @@ while 1
     end
 
     % 2. Retrieve Left/Right Unity images at time t
-    path = '../datFiles/serve1.dat';
+    path = '../datFiles/serve4.dat';
+    %path = '../datFiles/bounce.dat';
     errorCode = MoveTennisBall(request, path);
 
     if errorCode == 0 
@@ -136,6 +137,7 @@ calc_X = read(client, numFrames, 'double');
 calc_Y = read(client, numFrames, 'double');
 calc_Z = read(client, numFrames, 'double');
 t = read(client, numFrames, 'uint32');
+t = double(t);
 disp('here')
 
 for i = 1:numFrames
@@ -169,37 +171,42 @@ ylabel('Y Position');
 zlabel('Z Position');
 grid on;
 
+% Polynomial fit for X, Y, and Z coordinates
+coeff_X = polyfit(t, calc_X, 2);
+coeff_Y = polyfit(t, calc_Y, 1);
+coeff_Z = polyfit(t, calc_Z, 1);
 
-% Plot X coordinate
+% Plot X coordinate with polynomial fit
 figure;
 plot(t, calc_X, 'r'); % Plot calculated X positions in red
 hold on;
 plot(t, real_X, 'b'); % Plot real X positions in blue
-legend('Calculated X', 'Real X');
+plot(t, polyval(coeff_X, t), 'm--'); % Plot polynomial fit in green dashed line
+legend('Calculated X', 'Real X', 'Polyfit X');
 title('Comparison of Calculated and Real X Positions Over Time');
 xlabel('Time');
 ylabel('X Position');
 grid on;
 
-
-% Plot Y coordinate
+% Plot Y coordinate with polynomial fit
 figure;
 plot(t, calc_Y, 'r'); % Plot calculated Y positions in red
 hold on;
 plot(t, real_Y, 'b'); % Plot real Y positions in blue
-legend('Calculated Y', 'Real Y');
+plot(t, polyval(coeff_Y, t), 'm--'); % Plot polynomial fit in green dashed line
+legend('Calculated Y', 'Real Y', 'Polyfit Y');
 title('Comparison of Calculated and Real Y Positions Over Time');
 xlabel('Time');
 ylabel('Y Position');
 grid on;
 
-
-% Plot Z coordinate
+% Plot Z coordinate with polynomial fit
 figure;
 plot(t, calc_Z, 'r'); % Plot calculated Z positions in red
 hold on;
 plot(t, real_Z, 'b'); % Plot real Z positions in blue
-legend('Calculated Z', 'Real Z');
+plot(t, polyval(coeff_Z, t), 'm--'); % Plot polynomial fit in green dashed line
+legend('Calculated Z', 'Real Z', 'Polyfit Z');
 title('Comparison of Calculated and Real Z Positions Over Time');
 xlabel('Time');
 ylabel('Z Position');

@@ -36,14 +36,18 @@ SHOT_TYPE_VOLLEY = 2
 FPGA_ENABLE = True
 WINDSHIFT_ENABLE = False
 ACCEL_PROCESSING = True
-FRAME_REQUEST_TIMEOUT = 400
+FRAME_REQUEST_TIMEOUT = 1500
 T_SKIP = 20
+PROCESS_T = 3
+FIXED_PROCESS_TIME = False
 #----------------------------------------------------------------------------------------------------------
 # INITIALIZE FPGA
 if (FPGA_ENABLE):
     print("Initializing FPGA...")
     camProcessed, camFeedthrough, camWriter = fpga.initFPGA()
     print("Initialized.")
+    print("Time Check:")
+    print(time.time())
 
 
 # Open Server
@@ -121,6 +125,8 @@ while True:
             end_time = time.time()
             if ((not ballFound) and (ACCEL_PROCESSING)): # DEBUGGING update t faster when ball is out of frame
                 t += T_SKIP
+            elif(FIXED_PROCESS_TIME):
+                t += PROCESS_T
             else:
                 t += int((end_time - start_time) * 1000)  # Convert processing time to ms
 
@@ -132,37 +138,35 @@ while True:
 
     elif cmd == RESULTS_CMD: # Send Results
         print('Results Requested...')
+
         # Calculate Corresponding Result
         if (resultsReady):
-            # 1. Filter Data
-            ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
+            # Remove any completely inaccurate data
+            ballPositionXYZ = ball.removeInvalidXYZ(ballPositionXYZ)
 
-            # 2. Get Mode-Specific Results
+            # Get Mode-Specific Results
             if (mode == MODE_COEFF):  # Coeff Mode
                 print('Calculating Coefficient of Restitution...')
-                coeff = ball.getCoefficientOfRestitution(ballPositionXYZ) # Calculate coefficient
-                tcp.sendResult(mode, coeff, ballPositionXYZ, npSocket) # Send Coefficient
+                # Just calculate coefficient of restitution and send
+                beforeBounceXYZ, afterBounceXYZ = ball.filterStereoXYZ_Coeff(ballPositionXYZ) # Filter 
+                coeff = ball.getCoefficientOfRestitution(beforeBounceXYZ, afterBounceXYZ) # Calculate coefficient
+                tcp.sendResult(mode, coeff, npSocket) # Send Coefficient
+
             elif mode == MODE_IN_OUT:  # Shot Mode
                 print('Calculating In/Out...')
-                if shotType == SHOT_TYPE_SERVE:
-                    print("The serve is " + "in bounds!" if ball.isServeInBound(ballPositionXYZ) else "out of bounds!")
-                elif shotType == SHOT_TYPE_VOLLEY:
-                    print("The volley is " + "in bounds!" if ball.isVolleyInBound(ballPositionXYZ) else "out of bounds!")
-                else:
-                    print('No mode selection made for determining in/out...')
+                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
+                lineDecision, _, _ = ball.getLineDecision(ballPositionXYZ, matchType, shotType) # Calculate In/Out
+                tcp.sendResult(mode, lineDecision, npSocket) # Send In/Out
 
             else:  # DEBUGGING MODE
                 print('DEBUGGING RESULTS...')
                 # Send XYZ over t Information
+                ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
                 tcp.sendBallXYZ(ballPositionXYZ, npSocket)
                 print('Bounce t:')
                 print(ball.findBounceT(ballPositionXYZ))
-                result = ball.getCoefficientOfRestitution(ballPositionXYZ)
-                print('Coeff:')
-                print(result)
 
             print('Results Sent')
-
         # Client has requested results at an invalid time
         else :
             print('Results Not Valid')

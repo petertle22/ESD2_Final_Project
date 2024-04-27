@@ -113,25 +113,26 @@ def calcStereoXYZ(xLeft, yLeft, xRight, yRight):
 
     return X, Y, Z
 
-def filterStereoXYZ(ballPositionXYZ_RAW):
+def removeInvalidXYZ(ballPositionXYZ_RAW):
     """
-    filterStereoXYZ removes invalid entries in an array of ball XYZ positions over time.
-    Current implementation:
-        - Remove all entries with a depth less than 0m or greater than 8m
+    removeInvalidXYZ removes completely invalid entries in an array of ball XYZ positions over time.
 
     :param ballPositionXYZ_RAW : Array to be filtered
 
     :return : The filtered 2D numpy array
     """
-    # Choose which filter to use
-    FILTER_SELECT = 1
+    # SETTINGS
+    MAX_LOWER_LIMIT = -1
+    MAX_UPPER_LIMIT = 8
 
-    # Simple filter
-    valid_columns = []
+    # GENERAL FILTER (Remove invalid entries)
+    valid_columns = [] # Keep track of valid entries
 
-    # Iterate over each column (frame) in the array
+    # Iterate over each frame to remove invalid entries
     for i in range(ballPositionXYZ_RAW.shape[1]):
-        if (-1 <= ballPositionXYZ_RAW[2, i]) and (ballPositionXYZ_RAW[2, i] <= 8):
+        # Is Z value within valid limits
+        if (MAX_LOWER_LIMIT <= ballPositionXYZ_RAW[2, i]) and (ballPositionXYZ_RAW[2, i] <= MAX_UPPER_LIMIT):
+            # Add this valid entry to filtered array
             valid_columns.append(ballPositionXYZ_RAW[:, i])
 
     # Convert the list of arrays back into a 2D NumPy array
@@ -139,50 +140,138 @@ def filterStereoXYZ(ballPositionXYZ_RAW):
         ballPositionXYZ = np.column_stack(valid_columns)
     else:
         # If no valid columns, return an empty array with the same number of rows and zero columns
+        print("ERROR: NO VALID ENTRIES FOUND")
         ballPositionXYZ = np.empty((ballPositionXYZ_RAW.shape[0], 0))
 
-    if (FILTER_SELECT == 1): #Polyfit, normalize strays to polyfit zone
-        valid_columns = []
-        buffer_zone = 0.5
+    return ballPositionXYZ
 
-        # Extract Z values and corresponding times
+def filterStereoXYZ(ballPositionXYZ):
+    """
+    filterStereoXYZ removes/normalizes invalid entries in an array of ball XYZ positions over time.
+    Current implementation:
+        - Find a rough estimate for bounce t
+        - Remove all entries after a possible bounce
+        - Polyfit remaining Z entries
+        - Create a "BufferZone" around the rough polyfit
+        - Remove/Normalize to BufferZone edges any data that is outside of BufferZone
+
+    :param ballPositionXYZ : Array to be filtered
+
+    :return : The filtered 2D numpy array
+    """
+    # SETTINGS
+    FILTER_SELECT = 1 # Select Which Filter (1 = Normal, 2 = Experimental)
+    REMOVE_INCORRECT = False  # True = Remove extreme values, False = Normalize Extreme Values
+    BUFFER_WIDTH = 0.4
+    CUTOFF_DEPTH = 0.2
+
+    # Select Filter
+    if (FILTER_SELECT == 1): #Polyfit, normalize strays to polyfit zone
+        # Initialize Variables
+        valid_columns = []
+
+        # 1. REMOVE DATA NEAR/AFTER POTENTIAL BOUNCE
+        cutIndex = 0 # Iterate through Z values until you reach cutoff depth
+        found = False
+        for i in range (ballPositionXYZ.shape[1]):
+            depth = ballPositionXYZ[2, i] # Get this depth
+            # Only look for cutIndex if it is not found yet AND there is no chnace that we are looking at a volley starting near the ground
+            if (not found) and (ballPositionXYZ[3, i] > 100):
+                # Does this depth meet the cutoff depth
+                if (depth <= CUTOFF_DEPTH): # Arbitrary cutoff height
+                    found = True # Found cutIndex, no need to continue to look
+                else:
+                    cutIndex += 1
+        ballPositionXYZ = ballPositionXYZ[:, 4:cutIndex] # Get entries just before potential bounce (remove first couple entries)
+
+        # Extract Z values and corresponding times BEFORE a potential bounce
         Z = ballPositionXYZ[2, :]
         t = ballPositionXYZ[3, :]
 
         # Fit a second order polynomial to Z over time
         p = np.polyfit(t, Z, 2)  # Coefficients of the polynomial
 
-        # Iterate over each column (frame) in the array
-        for i in range(ballPositionXYZ.shape[1]):
+        # Normalize or Remove any entries outside of expected bounds
+        for i in range(len(Z)):
             # Calculate the upper and lower bounds of the buffer zone
-            Z_fit = np.polyval(p, ballPositionXYZ[3, i])  # Evaluated polynomial at current time
-            upper_bound = Z_fit + buffer_zone
-            lower_bound = Z_fit - buffer_zone
+            Z_fit = np.polyval(p, t[i])  # Evaluated polynomial at current time
+            upper_bound = Z_fit + BUFFER_WIDTH
+            lower_bound = Z_fit - BUFFER_WIDTH
 
-            REMOVE = False
-            if (REMOVE):
-                if (lower_bound <= ballPositionXYZ[2, i]) and (ballPositionXYZ[2, i] <= upper_bound):
+            # Check which alteration method used (Removing or normalizing bad entries)
+            if (REMOVE_INCORRECT): # Remove Bad Entries
+                if (lower_bound <= Z[i]) and (Z[i] <= upper_bound):
+                    # Add valid entry to filtered data
                     valid_columns.append(ballPositionXYZ[:, i])
-            else:
-                if (lower_bound > ballPositionXYZ[2, i]):
-                    #ballPositionXYZ[2, i] = lower_bound
-                    ballPositionXYZ[2, i] = Z_fit
-                elif (upper_bound < ballPositionXYZ[2, i]):
-                    #ballPositionXYZ[2, i] = upper_bound
-                    ballPositionXYZ[2, i] = Z_fit
-                valid_columns.append(ballPositionXYZ[:, i])
+            else: # Normalize Bad Entries
+                if (lower_bound > Z[i]):
+                    ballPositionXYZ[2, i] = lower_bound
+                    #ballPositionXYZ[2, i] = Z_fit
+                    #ballPositionXYZ[2, i] += BUFFER_WIDTH
+                elif (upper_bound < Z[i]):
+                    ballPositionXYZ[2, i] = upper_bound
+                    #ballPositionXYZ[2, i] = Z_fit
+                    #ballPositionXYZ[2, i] -= BUFFER_WIDTH
+                valid_columns.append(ballPositionXYZ[:, i]) # Add the entry to filtered data
 
         # Convert the list of arrays back into a 2D NumPy array
         if valid_columns:
             filteredXYZ = np.column_stack(valid_columns)
         else:
             # If no valid columns, return an empty array with the same number of rows and zero columns
+            print("ERROR: NO VALID ENTRIES FOUND AT NORMAL FILTER")
             filteredXYZ = np.empty((ballPositionXYZ.shape[0], 0))
 
         return filteredXYZ
 
     return ballPositionXYZ
-    
+
+def filterStereoXYZ_Coeff(ballPositionXYZ_RAW):
+    """
+    filterStereoXYZ_Coeff splits ball's XYZ into two arrays (before/after bounce) and filters them both individually
+
+    :param ballPositionXYZ_RAW : Array to be filtered
+
+    :return : A tuple containing the following:
+            - The filtered 2D numpy array before a bounce
+            - The filtered 2D numpy array after a bounce
+    """
+    # SETTINGS 
+    CUTOFF_DEPTH = 0.0
+
+    # 1. ISOLATE ENTRIES BEFORE BOUNCE
+    cutIndex1 = 0 # Iterate through Z values until you reach cutoff depth
+    found = False
+    for i in range (ballPositionXYZ_RAW.shape[1]):
+        depth = ballPositionXYZ_RAW[2, i] # Get this depth
+        # Only look for cutIndex if it is not found yet 
+        if (not found):
+            # Does this depth meet the cutoff depth
+            if (depth <= CUTOFF_DEPTH): # Arbitrary cutoff height
+                found = True # Found cutIndex, no need to continue to look
+            else:
+                cutIndex1 += 1
+    beforeXYZ = ballPositionXYZ_RAW[:, :cutIndex1] # Get entries just before potential bounce
+    ballPositionXYZ_RAW = ballPositionXYZ_RAW[:, cutIndex1:] # Get remaining entries
+
+    # 2. ISOLATE ENTRIES AFTER BOUNCE
+    cutIndex2 = 0 # Iterate through Z values until you reach cutoff depth
+    found = False
+    for i in range (ballPositionXYZ_RAW.shape[1]):
+        depth = ballPositionXYZ_RAW[2, i] # Get this depth
+        # Only look for cutIndex if it is not found yet 
+        if (not found):
+            # Does this depth meet the cutoff depth
+            if (depth >= CUTOFF_DEPTH): # Arbitrary cutoff height
+                found = True # Found cutIndex, no need to continue to look
+            else:
+                cutIndex2 += 1
+    afterXYZ = ballPositionXYZ_RAW[:, cutIndex2:] # Get entries just after potential bounce
+
+    # 3. FURTHER FILTER IPROVEMENTS
+
+    return beforeXYZ, afterXYZ
+
 def findBounceT(ballPositionXYZ):
     """
     findBounceT uses a polyfit on an array of ball XYZ positions over time to estimate the approx. t[ms] 
@@ -192,18 +281,22 @@ def findBounceT(ballPositionXYZ):
 
     :return : The floating point estimate of t[ms] at which Z = 0
     """
-    # Extract just the Z and t values for each frame
-    calculatedDepths = ballPositionXYZ[2, :]
-    t = ballPositionXYZ[3, :]
 
+    # Remove data before a potantial bounce
     # Find cutoff point just before a bounce
-    index = 0
-    for depth in calculatedDepths:
-        if depth <= 0.1: # Arbitrary cutoff height
-            # Cut both arrays at this index (including this index)
-            calculatedDepths = calculatedDepths[:index + 1]
-            t = t[:index + 1]
-        index += 1
+    cutIndex = 0
+    found = False
+    for i in range (ballPositionXYZ.shape[1]):
+        depth = ballPositionXYZ[2, i]
+        if (not found):
+            if (depth <= 0.1): # Arbitrary cutoff height
+                found = True
+            else:
+                cutIndex += 1
+    ballPositionXYZ_cut = ballPositionXYZ[:, :cutIndex]
+    # Extract just the Z and t values for each frame
+    calculatedDepths = ballPositionXYZ_cut[2, :]
+    t = ballPositionXYZ_cut[3, :]
 
     # MAV the data to smooth the curve
     window_size = 1  # Adjust this size to fit the smoothing level you need
@@ -243,43 +336,31 @@ def findEstimatedValue(positionArray, tUsedArray, estimatedTimeBallHitsGround, o
     # Evaluate and return
     return np.polyval(coefficients, estimatedTimeBallHitsGround)
 
-def getCoefficientOfRestitution(ballPositionXYZ):
+def getBallTrajectory(ballPositionXYZ):
     """
-    getCoefficientOfRestitution uses a ball's X,Y,Z position over time to calculate the ball/court 
-    coefficient of restitution by comparing velocity before and after a bounce
+    getBallTrajectory uses a polyfit of a ball's X,Y, or Z position to  return the corresponding coefficients
+    of each coordinate trajectory
 
-    :param ballPositionXYZ : The ball X,Y,Z,t information to calculate from
+    :param ballPositionXYZ : Array of ball positions to estimate from
 
-    :return : The coefficient of restitution
+    :return : A tuple of the following arrays:
+            - X coefficients
+            - Y coefficients
+            - Z coefficients
     """
-    positionArray, timeArray = ballPositionXYZ[2, :], ballPositionXYZ[3, :]
-    timeOfImpact, idx, N = findBounceT(ballPositionXYZ), 0, len(positionArray)
+    # Extract Relevant Position/Time Arrays
+    xArray = ballPositionXYZ[0,:]
+    yArray = ballPositionXYZ[1,:]
+    zArray = ballPositionXYZ[2,:]
+    tArray = ballPositionXYZ[3,:]
 
-   # Find the index of the closest time in timeArray to the timeOfImpact
-    bounceFrame = np.argmin(np.abs(timeArray - timeOfImpact))
+    # Fit a polynomial to the data
+    xCoefficients = np.polyfit(tArray, xArray, 1) # Linear fit for x values
+    yCoefficients = np.polyfit(tArray, yArray, 1) # Linear fit for y values
+    zCoefficients = np.polyfit(tArray, zArray, 2) # Quadratic fit for z values
 
-    # Split the arrays into before and after the bounce
-    positionBefore = positionArray[:bounceFrame + 1]
-    positionAfter = positionArray[bounceFrame:]
-
-    timeBefore = timeArray[:bounceFrame + 1]
-    timeAfter = timeArray[bounceFrame:]
-
-    # First order polyfit (linear regression) to get the slope before and after the bounce
-    coefficientsBefore = np.polyfit(timeBefore, positionBefore, 1)
-    coefficientsAfter = np.polyfit(timeAfter, positionAfter, 1)
-
-    # Extract the slopes
-    beforeV = coefficientsBefore[0]  # Slope of the line before the bounce
-    afterV = coefficientsAfter[0]    # Slope of the line after the bounce
-
-    # Calculate the ratio of the slopes
-    # Ensure afterV is not zero to avoid division by zero
-    if afterV == 0:
-        return None
-
-    restitutionRatio = abs(afterV / beforeV)
-    return restitutionRatio
+    # Evaluate and return
+    return xCoefficients, yCoefficients, zCoefficients
 
 def getLineDecision(ballPositionXYZ, matchType, shotType):
     """
@@ -290,49 +371,176 @@ def getLineDecision(ballPositionXYZ, matchType, shotType):
     :param matchType : integer to specify the tpe of match (singles = 1, doubles = 2)
     :param shotType : integer to specify the tpe of shot (serve = 1, volley = 2)
 
-    :return : "In" (1) or "Out" (0)
+    :return : a tuple with the the following information
+                - "In" (1.0) or "Out" (0.0)
+                - X position of ball at bounce (double)
+                - Y position of ball at bounce (double)
     """
-    pass
+    # Extract Relevant Position/Time Arrays
+    tArray = ballPositionXYZ[3,:]
+    xArray = ballPositionXYZ[0,:]
+    yArray = ballPositionXYZ[1,:]
+    # Get X,y at start of shot
+    startX = xArray[0]
+    startY = yArray[1]
+    # Get X,Y at bounceT
+    bounceT = findBounceT(ballPositionXYZ)
+    bounceX = findEstimatedValue(xArray, tArray, bounceT, 1)
+    bounceY = findEstimatedValue(yArray, tArray, bounceT, 1)
 
-def isServeInBound(ballPositionXYZ):
-    timeOfImpact = findBounceT(ballPositionXYZ)
-    startingX, startingY, startingZ, _ = ballPositionXYZ[0] # Get the starting position of the serve
+    # Setermine Shot Type Bounds
+    if(shotType == 1): # Handle a serve
+        result = isServeInBound(startX, startY, bounceX, bounceY)
+    else: # Handle Volley
+        result = isVolleyInBound(startX, startY, bounceX, bounceY, matchType)
 
-    bounceX, bounceY = None, None  # Get the bounce location of the serve
-    for i in range(len(ballPositionXYZ)):
-        thisTime = ballPositionXYZ[3, i]
-        if timeOfImpact < thisTime:
-            bounceX, bounceY = ballPositionXYZ[:1, i]
-            break
+    # Print Answer to user
+    print("Shot bounced at (%d, %d)" % (bounceX, bounceY))
+
+    # Format boolean into Double for tcp protocol 
+    if result:
+        resultFormatted = 1.0
+    else:
+        resultFormatted = 0.0
     
-    if bounceX > startingX: # The serve is going right-to-left relative to the camera
-        if startingY > 0: # The serve is going top-right corner to bottom-left corner
-            return bounceX <= 6.4 and -4.115 <= bounceY and bounceY <= 0 
-        elif startingY < 0: # The serve is going bottom-left corner to top-right corner
-            return bounceX <= 6.4 and 0 <= bounceY and bounceY <= 4.115
+    return resultFormatted, bounceX, bounceY
+
+def isServeInBound(startX, startY, bounceX, bounceY):
+    """
+    isServeInBound determines whether a given bounce X,Y landed within its proper service area bounds
+
+    :param startX : The initial X value of the ball
+    :param startY : The initial Y value of the ball
+    :param bounceX : The X value of the ball at bounce
+    :param bounceY : The Y value of the ball at bounce
+
+    :return : True ("In") or False ("Out")
+    """
+    # Top Left Service Area Bounds
+    TL_AREA_X_LEFT = 6.4
+    TL_AREA_X_RIGHT = 0
+    TL_AREA_Y_TOP = 4.115
+    TL_AREA_Y_Bottom = 0
+    # Bottom Left Service Area Bounds
+    BL_AREA_X_LEFT = 6.4
+    BL_AREA_X_RIGHT = 0
+    BL_AREA_Y_TOP = 0
+    BL_AREA_Y_Bottom = -4.115
+    # Top Right Service Area Bounds
+    TR_AREA_X_LEFT = 0
+    TR_AREA_X_RIGHT = -6.4
+    TR_AREA_Y_TOP = 4.115
+    TR_AREA_Y_Bottom = 0
+    # Bottom Right Service Area Bounds
+    BR_AREA_X_LEFT = 0
+    BR_AREA_X_RIGHT = -6,4
+    BR_AREA_Y_TOP = 0
+    BR_AREA_Y_Bottom = -4.115
+
+    if bounceX > startX: # The serve is going right-to-left from the camera POV
+        if startY > bounceY: # The serve is going from top-right corner to bottom-left corner
+            # Must land in Bottom Left Service Area
+            return (bounceX <= BL_AREA_X_LEFT) and (bounceX >= BL_AREA_X_RIGHT) and (bounceY <= BL_AREA_Y_TOP) and (bounceY >= BL_AREA_Y_Bottom)
+        elif startY < bounceY: # The serve is going from bottom-right corner to top-left corner
+            # Must land in Top Left Service Area
+            return (bounceX <= TL_AREA_X_LEFT) and (bounceX >= TL_AREA_X_RIGHT) and (bounceY <= TL_AREA_Y_TOP) and (bounceY >= TL_AREA_Y_Bottom)
         else:
             return False
 
-    else: # The serve is going left to right relative to the camera
-        if startingY > 0:  # The serve is going top-left corner to bottom-right corner
-            return -6.4 <= bounceX and -4.115 <= bounceY and bounceY <= 0 
-        elif startingY < 0:
-            return -6.4 <= bounceX and 0 <= bounceY and bounceY <= 4.115
+    else: # The serve is going left-to-right from the camera POV
+        if startY > bounceY:  # The serve is going top-left corner to bottom-right corner
+            # Must land in Bottom Right Service Area
+            return (bounceX <= BR_AREA_X_LEFT) and (bounceX >= BR_AREA_X_RIGHT) and (bounceY <= BR_AREA_Y_TOP) and (bounceY >= BR_AREA_Y_Bottom)
+        elif startY < bounceY: # The serve is going bottom-left corner to top-right corner
+            # Must land in Top Right Service Area
+            return (bounceX <= TR_AREA_X_LEFT) and (bounceX >= TR_AREA_X_RIGHT) and (bounceY <= TR_AREA_Y_TOP) and (bounceY >= TR_AREA_Y_Bottom)
         else:
             return False
 
-def isVolleyInBound(ballPositionXYZ):
-    timeOfImpact = findBounceT(ballPositionXYZ)
-    startingX, startingY, _, _ = ballPositionXYZ[0] # Get the starting position of the serve
+def isVolleyInBound(startX, startY, bounceX, bounceY, matchType):
+    """
+    isVolleyInBound determines whether a given bounce X,Y landed within its proper sideline and end line
 
-    bounceX, bounceY = None, None  # Get the bounce location of the serve
-    for i in range(len(ballPositionXYZ)):
-        thisTime = ballPositionXYZ[3, i]
-        if timeOfImpact < thisTime:
-            bounceX, bounceY = ballPositionXYZ[:1, i]
-            break
+    :param startX : The initial X value of the ball
+    :param startY : The initial Y value of the ball
+    :param bounceX : The X value of the ball at bounce
+    :param bounceY : The Y value of the ball at bounce
+    :param matchType : Match Singles (1) or Doubles (2)
+
+    :return : True ("In") or False ("Out")
+    """
+    # Define Court Bounds
+    X_LEFT_ENDLINE = 11.885
+    X_RIGHT_ENDLINE = -11.885
+    X_CENTER_LINE = 0
+    Y_TOP_SIDELINE_SINGLES = 4.115
+    Y_TOP_SIDELINE_DOUBLES = 5.485
+    Y_BOTTOM_SIDELINE_SINGLES = -4.115
+    Y_BOTTOM_SIDELINE_DOUBLES = -5.485
     
-    if bounceX > startingX: # The volley is going right-to-left relative to the camera
-        return 0 <= bounceX and bounceX <= 11.885 and -5.485 <= bounceY and bounceY <= 5.485
-    else: # The volley is going left to right relative to the camera
-        return -11.885 <= bounceX and bounceX <= 0 and -5.485 <= bounceY and bounceY <= 5.485
+    # Determine if bounce X,Y is within given bounds
+    if bounceX > startX: # The serve is going right-to-left from the camera POV
+        if (matchType == 1): # Use SINGLES bounds
+            # Must land in Left Singles Zone
+            return (bounceX <= X_LEFT_ENDLINE) and (bounceX >= X_CENTER_LINE) and (bounceY <= Y_TOP_SIDELINE_SINGLES) and (bounceY >= Y_BOTTOM_SIDELINE_SINGLES)
+        elif (matchType == 2): # Use DOUBLES bounds
+            # Must land in Left Doubles Zone
+            return (bounceX <= X_LEFT_ENDLINE) and (bounceX >= X_CENTER_LINE) and (bounceY <= Y_TOP_SIDELINE_DOUBLES) and (bounceY >= Y_BOTTOM_SIDELINE_DOUBLES)
+        else:
+            return False
+
+    else: # The serve is going left-to-right from the camera POV
+        if (matchType == 1): # Use SINGLES bounds
+            # Must land in Right Singles Zone
+            return (bounceX <= X_CENTER_LINE) and (bounceX >= X_RIGHT_ENDLINE) and (bounceY <= Y_TOP_SIDELINE_SINGLES) and (bounceY >= Y_BOTTOM_SIDELINE_SINGLES)
+        elif (matchType == 2): # Use DOUBLES bounds
+            # Must land in Right Doubles Zone
+            return (bounceX <= X_CENTER_LINE) and (bounceX >= X_RIGHT_ENDLINE) and (bounceY <= Y_TOP_SIDELINE_DOUBLES) and (bounceY >= Y_BOTTOM_SIDELINE_DOUBLES)
+        else:
+            return False
+
+def getCoefficientOfRestitution(beforeBounceXYZ, afterBounceXYZ):
+    """
+    getCoefficientOfRestitution uses a ball's X,Y,Z position over time before and after to calculate the ball/court 
+    coefficient of restitution by comparing velocities
+
+    :param beforeBounceXYZ : The ball X,Y,Z,t information before a bounce
+    :param afterBounceXYZ : The ball X,Y,Z,t information after a bounce
+
+    :return : The coefficient of restitution (Ideally 0.7)
+    """
+    # Extract desired range of frames
+    beforeZ = beforeBounceXYZ[2,:]
+    beforeT = beforeBounceXYZ[3,:]
+    afterZ = afterBounceXYZ[2,:]
+    afterT = afterBounceXYZ[3,:]
+
+    # Isolate Z positions near bounce T to get true velocity
+    beforeLength = len(beforeZ)
+    afterLength = len(afterZ)
+    beforeStartIdx = beforeLength / 2 # Find split point of data
+    afterEndIdx = afterLength / 2 # Find split point of data
+    beforeZ = beforeZ[beforeStartIdx:] # Only use back portion of data
+    afterZ = afterZ[:afterEndIdx] # Only use first portion of data
+
+    # First order polyfit (linear regression) to get the slope before and after the bounce
+    coefficientsBefore = np.polyfit(beforeT, beforeZ, 1)
+    coefficientsAfter = np.polyfit(afterT, afterZ, 1)
+
+    # Extract the slopes
+    beforeV = coefficientsBefore[0]  # Slope of the line before the bounce
+    afterV = coefficientsAfter[0]    # Slope of the line after the bounce
+
+    # Calculate the ratio of the slopes
+    # Ensure afterV is not zero to avoid division by zero
+    if afterV == 0:
+        return None
+
+    # Calculate Ratio
+    restitutionRatio = abs(afterV / beforeV)
+
+    # Print Answer to user
+    print('Coefficient of Restitution:')
+    print(restitutionRatio)
+
+    return restitutionRatio
