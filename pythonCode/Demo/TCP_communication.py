@@ -98,7 +98,29 @@ def sendBallXYZ(ballPositionXYZ, npSocket):
 
     return
 
-def sendResult(mode, result, ballPositionXYZ, npSocket):
+def sendTrajectoryCoeff(xCoeff, yCoeff, zCoeff, npSocket):
+    """
+    Sends a ball's XYZ trajectory in the form of polynomial coefficients
+
+    :param xCoeff : Linear polynomial coefficients
+    :param yCoeff : Linear polynomial coefficients
+    :param zCoeff : Quadratic polynomial coefficients
+    :param npSocket : The socket connection over which information is sent
+    
+    :return : None
+    """
+    X_msg = np.array(xCoeff[:], dtype=np.double)
+    npSocket.send(X_msg)
+
+    Y_msg = np.array(yCoeff[:], dtype=np.double)
+    npSocket.send(Y_msg)
+
+    Z_msg = np.array(zCoeff[:], dtype=np.double)
+    npSocket.send(Z_msg)
+
+    return
+
+def sendResult(mode, result, npSocket):
     """
     Depending on the requested mode, sends a final determination to the client
 
@@ -117,8 +139,5 @@ def sendResult(mode, result, ballPositionXYZ, npSocket):
         # Send Result as Double 
         result_msg = np.array(result, dtype=np.double)  # Formatting
         npSocket.send(result_msg)
-        # Extra info sent for In/Out Mode
-        if (mode == 2):
-            sendBallXYZ(ballPositionXYZ, npSocket)
 
     return 

@@ -182,7 +182,7 @@ def filterStereoXYZ(ballPositionXYZ):
                     found = True # Found cutIndex, no need to continue to look
                 else:
                     cutIndex += 1
-            ballPositionXYZ = ballPositionXYZ[:, 4:cutIndex] # Get entries just before potential bounce (remove firts couple entries)
+        ballPositionXYZ = ballPositionXYZ[:, 4:cutIndex] # Get entries just before potential bounce (remove first couple entries)
 
         # Extract Z values and corresponding times BEFORE a potential bounce
         Z = ballPositionXYZ[2, :]
@@ -228,7 +228,7 @@ def filterStereoXYZ(ballPositionXYZ):
 
 def filterStereoXYZ_Coeff(ballPositionXYZ_RAW):
     """
-    filterStereoXYZ_Coeff 
+    filterStereoXYZ_Coeff splits ball's XYZ into two arrays (before/after bounce) and filters them both individually
 
     :param ballPositionXYZ_RAW : Array to be filtered
 
@@ -236,8 +236,41 @@ def filterStereoXYZ_Coeff(ballPositionXYZ_RAW):
             - The filtered 2D numpy array before a bounce
             - The filtered 2D numpy array after a bounce
     """
+    # SETTINGS 
+    CUTOFF_DEPTH = 0.0
 
-    pass
+    # 1. ISOLATE ENTRIES BEFORE BOUNCE
+    cutIndex1 = 0 # Iterate through Z values until you reach cutoff depth
+    found = False
+    for i in range (ballPositionXYZ_RAW.shape[1]):
+        depth = ballPositionXYZ_RAW[2, i] # Get this depth
+        # Only look for cutIndex if it is not found yet 
+        if (not found):
+            # Does this depth meet the cutoff depth
+            if (depth <= CUTOFF_DEPTH): # Arbitrary cutoff height
+                found = True # Found cutIndex, no need to continue to look
+            else:
+                cutIndex1 += 1
+    beforeXYZ = ballPositionXYZ_RAW[:, :cutIndex1] # Get entries just before potential bounce
+    ballPositionXYZ_RAW = ballPositionXYZ_RAW[:, cutIndex1:] # Get remaining entries
+
+    # 2. ISOLATE ENTRIES AFTER BOUNCE
+    cutIndex2 = 0 # Iterate through Z values until you reach cutoff depth
+    found = False
+    for i in range (ballPositionXYZ_RAW.shape[1]):
+        depth = ballPositionXYZ_RAW[2, i] # Get this depth
+        # Only look for cutIndex if it is not found yet 
+        if (not found):
+            # Does this depth meet the cutoff depth
+            if (depth >= CUTOFF_DEPTH): # Arbitrary cutoff height
+                found = True # Found cutIndex, no need to continue to look
+            else:
+                cutIndex2 += 1
+    afterXYZ = ballPositionXYZ_RAW[:, cutIndex2:] # Get entries just after potential bounce
+
+    # 3. FURTHER FILTER IPROVEMENTS
+
+    return beforeXYZ, afterXYZ
 
 def findBounceT(ballPositionXYZ):
     """
@@ -303,6 +336,32 @@ def findEstimatedValue(positionArray, tUsedArray, estimatedTimeBallHitsGround, o
     # Evaluate and return
     return np.polyval(coefficients, estimatedTimeBallHitsGround)
 
+def getBallTrajectory(ballPositionXYZ):
+    """
+    getBallTrajectory uses a polyfit of a ball's X,Y, or Z position to  return the corresponding coefficients
+    of each coordinate trajectory
+
+    :param ballPositionXYZ : Array of ball positions to estimate from
+
+    :return : A tuple of the following arrays:
+            - X coefficients
+            - Y coefficients
+            - Z coefficients
+    """
+    # Extract Relevant Position/Time Arrays
+    xArray = ballPositionXYZ[0,:]
+    yArray = ballPositionXYZ[1,:]
+    zArray = ballPositionXYZ[2,:]
+    tArray = ballPositionXYZ[3,:]
+
+    # Fit a polynomial to the data
+    xCoefficients = np.polyfit(tArray, xArray, 1) # Linear fit for x values
+    yCoefficients = np.polyfit(tArray, yArray, 1) # Linear fit for y values
+    zCoefficients = np.polyfit(tArray, zArray, 2) # Quadratic fit for z values
+
+    # Evaluate and return
+    return xCoefficients, yCoefficients, zCoefficients
+
 def getLineDecision(ballPositionXYZ, matchType, shotType):
     """
     getLineDecision analyzes a filtered data set of a ball's X,Y,Z,t position accross a series of frames
@@ -313,7 +372,7 @@ def getLineDecision(ballPositionXYZ, matchType, shotType):
     :param shotType : integer to specify the tpe of shot (serve = 1, volley = 2)
 
     :return : a tuple with the the following information
-                - "In" (True) or "Out" (False)
+                - "In" (1.0) or "Out" (0.0)
                 - X position of ball at bounce (double)
                 - Y position of ball at bounce (double)
     """
@@ -334,8 +393,17 @@ def getLineDecision(ballPositionXYZ, matchType, shotType):
         result = isServeInBound(startX, startY, bounceX, bounceY)
     else: # Handle Volley
         result = isVolleyInBound(startX, startY, bounceX, bounceY, matchType)
+
+    # Print Answer to user
+    print("Shot bounced at (%d, %d)" % (bounceX, bounceY))
+
+    # Format boolean into Double for tcp protocol 
+    if result:
+        resultFormatted = 1.0
+    else:
+        resultFormatted = 0.0
     
-    return result, bounceX, bounceY
+    return resultFormatted, bounceX, bounceY
 
 def isServeInBound(startX, startY, bounceX, bounceY):
     """
@@ -446,6 +514,15 @@ def getCoefficientOfRestitution(beforeBounceXYZ, afterBounceXYZ):
     beforeT = beforeBounceXYZ[3,:]
     afterZ = afterBounceXYZ[2,:]
     afterT = afterBounceXYZ[3,:]
+
+    # Isolate Z positions near bounce T to get true velocity
+    beforeLength = len(beforeZ)
+    afterLength = len(afterZ)
+    beforeStartIdx = beforeLength / 2 # Find split point of data
+    afterEndIdx = afterLength / 2 # Find split point of data
+    beforeZ = beforeZ[beforeStartIdx:] # Only use back portion of data
+    afterZ = afterZ[:afterEndIdx] # Only use first portion of data
+
     # First order polyfit (linear regression) to get the slope before and after the bounce
     coefficientsBefore = np.polyfit(beforeT, beforeZ, 1)
     coefficientsAfter = np.polyfit(afterT, afterZ, 1)
@@ -463,7 +540,7 @@ def getCoefficientOfRestitution(beforeBounceXYZ, afterBounceXYZ):
     restitutionRatio = abs(afterV / beforeV)
 
     # Print Answer to user
-    print('Coefficient of Restitution')
+    print('Coefficient of Restitution:')
     print(restitutionRatio)
 
     return restitutionRatio
