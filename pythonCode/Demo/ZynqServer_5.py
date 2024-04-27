@@ -46,6 +46,8 @@ if (FPGA_ENABLE):
     print("Initializing FPGA...")
     camProcessed, camFeedthrough, camWriter = fpga.initFPGA()
     print("Initialized.")
+    print("Time Check:")
+    print(time.time())
 
 
 # Open Server
@@ -92,6 +94,8 @@ while True:
 
             # Start Processing Current Frame
             start_time = time.time()  # start a timer from 0 to track processing time
+            print("Time Check")
+            print(start_time)
             # 0. Adapt stereo background to possible wind shifts in new stereo image
             if (WINDSHIFT_ENABLE): # Wind present, may shift camera around
                 # IMPLEMENT 
