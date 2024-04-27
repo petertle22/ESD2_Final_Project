@@ -190,6 +190,9 @@ def filterStereoXYZ(ballPositionXYZ):
 
         # Fit a second order polynomial to Z over time
         p = np.polyfit(t, Z, 2)  # Coefficients of the polynomial
+        # Check if the polyfit is a positive paraobola (Bad)
+        if p[0] > 0:
+            p = np.polyfit(t, Z, 1)  # Refit with a linear polyfit
 
         # Normalize or Remove any entries outside of expected bounds
         for i in range(len(Z)):
@@ -298,13 +301,11 @@ def findBounceT(ballPositionXYZ):
     calculatedDepths = ballPositionXYZ_cut[2, :]
     t = ballPositionXYZ_cut[3, :]
 
-    # MAV the data to smooth the curve
-    window_size = 1  # Adjust this size to fit the smoothing level you need
-    window = np.ones(window_size) / window_size
-    calculatedDepths = np.convolve(calculatedDepths, window, 'same')
-
     # Fit a polynomial to the data to get its coefficients
     coefficients = np.polyfit(t, calculatedDepths, 2) # Use quadratic polyfit because of gravity affecting trajectory
+    # Check if the polyfit is a positive paraobola (Bad)
+    if coefficients[0] > 0:
+         coefficients = np.polyfit(t, calculatedDepths, 1)  # Refit using first linear 
     # Create a polynomial from the coefficients
     p = np.poly1d(coefficients)
     # Find the roots of the polynomial where the depth will be zero
@@ -358,6 +359,9 @@ def getBallTrajectory(ballPositionXYZ):
     xCoefficients = np.polyfit(tArray, xArray, 1) # Linear fit for x values
     yCoefficients = np.polyfit(tArray, yArray, 1) # Linear fit for y values
     zCoefficients = np.polyfit(tArray, zArray, 2) # Quadratic fit for z values
+    # Check if the polyfit is a positive paraobola (Bad)
+    if zCoefficients[0] > 0:
+        zCoefficients = np.polyfit(tArray, zArray, 1)  # Refit with a linear polyfit
 
     # Evaluate and return
     return xCoefficients, yCoefficients, zCoefficients

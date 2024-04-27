@@ -98,13 +98,14 @@ def sendBallXYZ(ballPositionXYZ, npSocket):
 
     return
 
-def sendTrajectoryCoeff(xCoeff, yCoeff, zCoeff, npSocket):
+def sendTrajectoryCoeff(xCoeff, yCoeff, zCoeff, bounceT, npSocket):
     """
     Sends a ball's XYZ trajectory in the form of polynomial coefficients
 
     :param xCoeff : Linear polynomial coefficients
     :param yCoeff : Linear polynomial coefficients
-    :param zCoeff : Quadratic polynomial coefficients
+    :param zCoeff : Quadratic (or Linear) polynomial coefficients
+    :param bounceT : The estimated time of bounce
     :param npSocket : The socket connection over which information is sent
     
     :return : None
@@ -115,8 +116,15 @@ def sendTrajectoryCoeff(xCoeff, yCoeff, zCoeff, npSocket):
     Y_msg = np.array(yCoeff[:], dtype=np.double)
     npSocket.send(Y_msg)
 
+    Z_Len = len(zCoeff)
+    Z_LenMsg = np.array(Z_Len, dtype=np.uint32)
+    npSocket.send(Z_LenMsg)
+
     Z_msg = np.array(zCoeff[:], dtype=np.double)
     npSocket.send(Z_msg)
+
+    tMsg = np.array(bounceT, dtype=np.double)
+    npSocket.send(tMsg)
 
     return
 

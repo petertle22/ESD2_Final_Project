@@ -162,7 +162,9 @@ while True:
                 print('DEBUGGING RESULTS...')
                 # Send XYZ over t Information
                 ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ)
-                tcp.sendBallXYZ(ballPositionXYZ, npSocket)
+                #tcp.sendBallXYZ(ballPositionXYZ, npSocket)
+                bounceX, bounceY, bounceZ = ball.getBallTrajectory(ballPositionXYZ)
+                tcp.sendTrajectoryCoeff(bounceX, bounceY, bounceZ, ball.findBounceT(ballPositionXYZ), npSocket)
                 print('Bounce t:')
                 print(ball.findBounceT(ballPositionXYZ))
 
