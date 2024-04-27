@@ -33,12 +33,12 @@ SHOT_TYPE_SERVE = 1
 SHOT_TYPE_VOLLEY = 2
 
 # SETTINGS
-FPGA_ENABLE = True
+FPGA_ENABLE = False
 WINDSHIFT_ENABLE = False
 ACCEL_PROCESSING = True
 FRAME_REQUEST_TIMEOUT = 600
-T_SKIP = 25
-PROCESS_T = 5
+T_SKIP = 20
+PROCESS_T = 3
 FIXED_PROCESS_TIME = True
 #----------------------------------------------------------------------------------------------------------
 # INITIALIZE FPGA
@@ -46,8 +46,6 @@ if (FPGA_ENABLE):
     print("Initializing FPGA...")
     camProcessed, camFeedthrough, camWriter = fpga.initFPGA()
     print("Initialized.")
-    print("Time Check:")
-    print(time.time())
 
 
 # Open Server
