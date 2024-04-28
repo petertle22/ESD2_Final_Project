@@ -249,6 +249,8 @@ def filterStereoXYZ_Coeff(ballPositionXYZ_RAW):
     """
     # SETTINGS 
     CUTOFF_DEPTH = 0.0
+    FILTER_SELECT = 1
+    BUFFER_WIDTH = 0.4
 
     # 1. ISOLATE ENTRIES BEFORE BOUNCE
     cutIndex1 = 0 # Iterate through Z values until you reach cutoff depth
@@ -279,7 +281,81 @@ def filterStereoXYZ_Coeff(ballPositionXYZ_RAW):
                 cutIndex2 += 1
     afterXYZ = ballPositionXYZ_RAW[:, cutIndex2:] # Get entries just after potential bounce
 
-    # 3. FURTHER FILTER IPROVEMENTS
+    # 3. FURTHER FILTER THE TWO HALVES
+    # Select Filter
+    if (FILTER_SELECT == 1): #Polyfit, normalize strays to polyfit zone
+        # Initialize Variables
+        valid_columns_before = []
+        valid_columns_after = []
+
+        # Extract Z values and corresponding times BEFORE and AFTER a potential bounce
+        beforeZ = beforeXYZ[2, :]
+        beforeT = beforeXYZ[3, :]
+        afterZ = afterXYZ[2, :]
+        afterT = afterXYZ[3, :]
+
+        # Debugging print to user
+        print("Num Valid Frames BEFORE Bounce:")
+        print(len(beforeZ))
+        print("Num Valid Frames AFTER Bounce:")
+        print(len(afterZ))
+
+        # Fit a second order polynomial to Z before bounce over time
+        beforeP = np.polyfit(beforeT, beforeZ, 2)  # Coefficients of the polynomial
+        # Check if the polyfit is a positive paraobola (Bad)
+        if beforeP[0] > 0:
+            beforeP = np.polyfit(beforeT, beforeZ, 1)  # Refit with a linear polyfit
+        # Fit a second order polynomial to Z after bounce over time
+        afterP = np.polyfit(afterT, afterZ, 2)  # Coefficients of the polynomial
+        # Check if the polyfit is a positive paraobola (Bad)
+        if afterP[0] > 0:
+            afterP = np.polyfit(afterT, afterZ, 1)  # Refit with a linear polyfit
+
+        # Normalize or Remove any entries outside of expected bounds for before bounce
+        for i in range(len(beforeZ)):
+            # Calculate the upper and lower bounds of the buffer zone
+            Z_fit = np.polyval(beforeP, beforeT[i])  # Evaluated polynomial at current time
+            upper_bound = Z_fit + BUFFER_WIDTH
+            lower_bound = Z_fit - BUFFER_WIDTH
+
+            # Normalize bad entries found
+            if (lower_bound > beforeZ[i]):
+                beforeXYZ[2, i] = lower_bound
+            elif (upper_bound < beforeZ[i]):
+                beforeXYZ[2, i] = upper_bound
+            valid_columns_before.append(beforeXYZ[:, i]) # Add the entry to filtered data
+
+        # Convert the list of arrays back into a 2D NumPy array
+        if valid_columns_before:
+            filteredBeforeXYZ = np.column_stack(valid_columns_before)
+        else:
+            # If no valid columns, return an empty array with the same number of rows and zero columns
+            print("ERROR: NO VALID BEFORE ENTRIES FOUND AT NORMAL FILTER")
+            filteredBeforeXYZ = np.empty((beforeXYZ.shape[0], 0))
+
+        # Normalize or Remove any entries outside of expected bounds for after bounce
+        for i in range(len(afterZ)):
+            # Calculate the upper and lower bounds of the buffer zone
+            Z_fit = np.polyval(afterP, afterT[i])  # Evaluated polynomial at current time
+            upper_bound = Z_fit + BUFFER_WIDTH
+            lower_bound = Z_fit - BUFFER_WIDTH
+
+            # Normalize bad entries found
+            if (lower_bound > afterZ[i]):
+                afterXYZ[2, i] = lower_bound
+            elif (upper_bound < afterZ[i]):
+                afterXYZ[2, i] = upper_bound
+            valid_columns_after.append(afterXYZ[:, i]) # Add the entry to filtered data
+
+        # Convert the list of arrays back into a 2D NumPy array
+        if valid_columns_after:
+            filteredAfterXYZ = np.column_stack(valid_columns_after)
+        else:
+            # If no valid columns, return an empty array with the same number of rows and zero columns
+            print("ERROR: NO VALID AFTER ENTRIES FOUND AT NORMAL FILTER")
+            filteredAfterXYZ = np.empty((beforeXYZ.shape[0], 0))
+
+        return filteredBeforeXYZ, filteredAfterXYZ
 
     return beforeXYZ, afterXYZ
 

@@ -37,7 +37,7 @@ FPGA_ENABLE = False
 CV2_PREPROCESS_ENABLE = True
 WINDSHIFT_ENABLE = False
 ACCEL_PROCESSING = True
-FRAME_REQUEST_TIMEOUT = 1400
+FRAME_REQUEST_TIMEOUT = 2000
 T_SKIP = 20
 PROCESS_T = 3
 FIXED_PROCESS_TIME = True
@@ -90,7 +90,9 @@ while True:
             else:
                 data = npSocket.receive() # Read data from client
 
+            # Check if shot has ended
             if np.all(emptyLeftGray == 0) and np.all(emptyRightGray == 0):
+                # Stop processing frames
                 print("Requested for frame out of bounds for time ", t)
                 break
 
@@ -138,7 +140,6 @@ while True:
 
         # All Frames Processed
         print("Exiting process frames loop")
-        cv2.imwrite("Save.jpg", processedLeft)
         resultsReady = True
         tcp.sendCMD(STOP_CMD, npSocket)  # Stop Command: Tell Client to stop sending frames and instead request the result back
         print('Sent Stop CMD')
@@ -151,7 +152,7 @@ while True:
             # Remove any completely inaccurate data
             ballPositionXYZ = ball.removeInvalidXYZ(ballPositionXYZ)
 
-            # Get Mode-Specific Results
+            # Get/Send Mode-Specific Results
             if (mode == MODE_COEFF):  # Coeff Mode
                 print('Calculating Coefficient of Restitution...')
                 # Just calculate coefficient of restitution and send
@@ -164,10 +165,10 @@ while True:
                 ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ, shotType)
                 lineDecision, _, _ = ball.getLineDecision(ballPositionXYZ, matchType, shotType) # Calculate In/Out
                 tcp.sendResult(mode, lineDecision, npSocket) # Send In/Out
-
-
+                # Get and send trajectory of shot
                 bounceX, bounceY, bounceZ = ball.getBallTrajectory(ballPositionXYZ)
                 tcp.sendTrajectoryCoeff(bounceX, bounceY, bounceZ, ball.findBounceT(ballPositionXYZ), npSocket)
+                # Report bounceT to user
                 print('Bounce t:')
                 print(ball.findBounceT(ballPositionXYZ))
 
@@ -175,7 +176,6 @@ while True:
                 print('DEBUGGING RESULTS...')
                 # Send XYZ over t Information
                 ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ, shotType)
-                #tcp.sendBallXYZ(ballPositionXYZ, npSocket)
                 bounceX, bounceY, bounceZ = ball.getBallTrajectory(ballPositionXYZ)
                 tcp.sendTrajectoryCoeff(bounceX, bounceY, bounceZ, ball.findBounceT(ballPositionXYZ), npSocket)
                 print('Bounce t:')
