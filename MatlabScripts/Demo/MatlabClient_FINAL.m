@@ -13,8 +13,8 @@ width = 752.0;
 height = 480.0;
 
 % Server IP address
-%server_ip   = '129.21.42.178'; % Debug Computer
-server_ip   = '129.21.91.215'; % Board
+%server_ip   = '129.21.42.146'; % Debug Computer
+server_ip   = '129.21.42.10'; % Board
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CLIENT INITIALIZATION (GUI PASS PARAMETERS/START)
@@ -29,9 +29,9 @@ emptyRightGray = preprocessImage(emptyRightImage);
 
 % Get these parameters from GUI
 MODE = '2';       % 1 -> coefficient of restitution, 2 -> ball is inside or out
-MATCH_TYPE = '2'; % 1 -> singles mode, -> 2 doubles mode
-SHOT_TYPE = '1';  % 1 -> serve mode, 2 -> volley mode
-path = '../datFiles/serve1.dat'; % Path to .dat file being used
+MATCH_TYPE = '1'; % 1 -> singles mode, -> 2 doubles mode
+SHOT_TYPE = '2';  % 1 -> serve mode, 2 -> volley mode
+path = '../datFiles/volley4.dat'; % Path to .dat file being used
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CONNECT TO SERVER
@@ -126,11 +126,11 @@ receiveMode = read(client, 1, 'uint32');
 
 % Get Mode-Specific Results
 if receiveMode == 1 % Coefficient of restitution
-    restitutionCoeff = read(client, 1, 'double');
+    restitutionCoeff = read(client, 1, 'double')
 
 else % In/Out Decison or DEBUGGING
     if receiveMode == 2 % In/Out decision
-        isShotIn = read(client, 1, 'double'); % 1.0 = TRUE, 0.0 = FALSE
+        isShotIn = read(client, 1, 'double') % 1.0 = TRUE, 0.0 = FALSE
     end 
 
     % Receive calculated X,Y,Z trajectories
@@ -165,58 +165,75 @@ write(client,'9999');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ADDITIONAL INFO DISPLAY
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 1. DISPLAY X,Y,Z REAL/CALC TRAJECTORY INDIVIDUALLY
-t = 1:ceil(bounceT); % Discrete steps of 1 ms
-% Populate calculated trajectory
-% Evaluate polynomials
-poly_X = polyval(xCoeff, t); % Flip to use polyval correctly
-poly_Y = polyval(yCoeff, t);
-poly_Z = polyval(zCoeff, t);
-% Populate actual correct results
-ballData = load(path);
-real_X = NaN(1, length(t));
-real_Y = NaN(1, length(t));
-real_Z = NaN(1, length(t));
-for i = 1:length(t)
-    if i <= size(ballData, 1)
-        real_X(i) = ballData(i, 3);
-        real_Y(i) = ballData(i, 1);
-        real_Z(i) = ballData(i, 2);
-    else
-        error('Index exceeds the number of rows in ballData file.');
+if receiveMode == 2
+    % 1. DISPLAY X,Y,Z REAL/CALC TRAJECTORY INDIVIDUALLY
+    t = 1:ceil(bounceT); % Discrete steps of 1 ms
+    % Populate calculated trajectory
+    % Evaluate polynomials
+    poly_X = polyval(xCoeff, t); % Flip to use polyval correctly
+    poly_Y = polyval(yCoeff, t);
+    poly_Z = polyval(zCoeff, t);
+    % Populate actual correct results
+    ballData = load(path);
+    real_X = NaN(1, length(t));
+    real_Y = NaN(1, length(t));
+    real_Z = NaN(1, length(t));
+    for i = 1:length(t)
+        if i <= size(ballData, 1)
+            real_X(i) = ballData(i, 3);
+            real_Y(i) = ballData(i, 1);
+            real_Z(i) = ballData(i, 2);
+        else
+            error('Index exceeds the number of rows in ballData file.');
+        end
     end
-end
-% Plotting
-figure;
-subplot(3, 1, 1);
-plot(t, poly_X, 'r'); % Plot calculated X positions in red
-hold on;
-plot(t, real_X, 'b'); % Plot real X positions in blue
-legend('Calculated X', 'Real X');
-title('Comparison of Calculated and Real X Positions Over Time');
-xlabel('Time, ms');
-ylabel('X Position, m');
-grid on;
-hold off;
-subplot(3, 1, 2);
-plot(t, poly_Y, 'r'); % Plot calculated Y positions in red
-hold on;
-plot(t, real_Y, 'b'); % Plot real X positions in blue
-legend('Calculated Y', 'Real Y');
-title('Comparison of Calculated and Real Y Positions Over Time');
-xlabel('Time, ms');
-ylabel('Y Position, m');
-grid on;
-hold off;
-subplot(3, 1, 3);
-plot(t, poly_Z, 'r'); % Plot calculated Z positions in red
-hold on;
-plot(t, real_Z, 'b'); % Plot real Z positions in blue
-legend('Calculated Z', 'Real Z');
-title('Comparison of Calculated and Real Z Positions Over Time');
-xlabel('Time, ms');
-ylabel('Z Position, m');
-grid on;
-hold off;
+    % Plotting
+    figure;
+    subplot(3, 1, 1);
+    plot(t, poly_X, 'r'); % Plot calculated X positions in red
+    hold on;
+    plot(t, real_X, 'b'); % Plot real X positions in blue
+    legend('Calculated X', 'Real X');
+    title('Comparison of Calculated and Real X Positions Over Time');
+    xlabel('Time, ms');
+    ylabel('X Position, m');
+    grid on;
+    hold off;
+    subplot(3, 1, 2);
+    plot(t, poly_Y, 'r'); % Plot calculated Y positions in red
+    hold on;
+    plot(t, real_Y, 'b'); % Plot real X positions in blue
+    legend('Calculated Y', 'Real Y');
+    title('Comparison of Calculated and Real Y Positions Over Time');
+    xlabel('Time, ms');
+    ylabel('Y Position, m');
+    grid on;
+    hold off;
+    subplot(3, 1, 3);
+    plot(t, poly_Z, 'r'); % Plot calculated Z positions in red
+    hold on;
+    plot(t, real_Z, 'b'); % Plot real Z positions in blue
+    legend('Calculated Z', 'Real Z');
+    title('Comparison of Calculated and Real Z Positions Over Time');
+    xlabel('Time, ms');
+    ylabel('Z Position, m');
+    grid on;
+    hold off;
+    saveas(gcf, 'volley4DoubleData.jpg', 'jpg');
 
 % 2. 3D plot of real and calc trajectory?
+% Plotting
+    figure;
+    plot3(poly_X, poly_Y, poly_Z, 'r'); % Plot calculated X,Y,Z positions in red
+    hold on;
+    plot3(real_X, real_Y, real_Z, 'b'); % Plot real X,Y,Z positions in blue
+    legend('Calculated XYZ', 'Real XYZ');
+    title('Comparison of Calculated and Real XYZ Positions Over Time');
+    xlabel('X position, m');
+    ylabel('Y position, m');
+    zlabel('Z position, m');
+    grid on;
+    hold off;
+    saveas(gcf, 'volley4DoubleData3D.jpg', 'jpg');
+
+end
