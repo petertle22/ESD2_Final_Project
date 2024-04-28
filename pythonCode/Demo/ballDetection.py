@@ -353,7 +353,7 @@ def filterStereoXYZ_Coeff(ballPositionXYZ_RAW):
         else:
             # If no valid columns, return an empty array with the same number of rows and zero columns
             print("ERROR: NO VALID AFTER ENTRIES FOUND AT NORMAL FILTER")
-            filteredAfterXYZ = np.empty((beforeXYZ.shape[0], 0))
+            filteredAfterXYZ = np.empty((afterXYZ.shape[0], 0))
 
         return filteredBeforeXYZ, filteredAfterXYZ
 
@@ -609,7 +609,9 @@ def getCoefficientOfRestitution(beforeBounceXYZ, afterBounceXYZ):
     beforeStartIdx = beforeLength / 2 # Find split point of data
     afterEndIdx = afterLength / 2 # Find split point of data
     beforeZ = beforeZ[beforeStartIdx:] # Only use back portion of data
+    beforeT = beforeT[beforeStartIdx:] # Only use back portion of data
     afterZ = afterZ[:afterEndIdx] # Only use first portion of data
+    afterT = afterT[:afterEndIdx] # Only use first portion of data
 
     # First order polyfit (linear regression) to get the slope before and after the bounce
     coefficientsBefore = np.polyfit(beforeT, beforeZ, 1)
