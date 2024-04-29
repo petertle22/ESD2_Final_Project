@@ -1,4 +1,4 @@
-function [isShotIn, restitutionCoeff,  GCF] = MatlabClientAPI(MODE, MATCH_TYPE, SHOT_TYPE, path)
+function [isShotIn, restitutionCoeff, xCoeff, yCoeff, bounceT] = MatlabClientAPI(inMODE, inMATCH_TYPE, inSHOT_TYPE, inpath)
 	% MatlabClient_Final performs the following:
 	% - Waits for the GUI to initialize its parameters
 	% - Once GUI initiates process, connects to server over wifi
@@ -29,10 +29,10 @@ function [isShotIn, restitutionCoeff,  GCF] = MatlabClientAPI(MODE, MATCH_TYPE, 
 	emptyRightGray = preprocessImage(emptyRightImage);
 	
 	% Get these parameters from GUI
-	MODE;       % 1 -> coefficient of restitution, 2 -> ball is inside or out
-	MATCH_TYPE; % 1 -> singles mode, -> 2 doubles mode
-	SHOT_TYPE;  % 1 -> serve mode, 2 -> volley mode
-	path; % Path to .dat file being used
+	MODE = num2str(inMODE);    % 1 -> coefficient of restitution, 2 -> ball is inside or out
+	MATCH_TYPE = num2str(inMATCH_TYPE); % 1 -> singles mode, -> 2 doubles mode
+	SHOT_TYPE = num2str(inSHOT_TYPE);  % 1 -> serve mode, 2 -> volley mode
+	path = inpath % Path to .dat file being used
 	
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% CONNECT TO SERVER
@@ -128,10 +128,15 @@ function [isShotIn, restitutionCoeff,  GCF] = MatlabClientAPI(MODE, MATCH_TYPE, 
 	% Get Mode-Specific Results
 	if receiveMode == 1 % Coefficient of restitution
 		restitutionCoeff = read(client, 1, 'double')
+        isShotIn = 0;
+        xCoeff = 0;
+        yCoeff = 0;
+        bounceT = 0;
 	
 	else % In/Out Decison or DEBUGGING
 		if receiveMode == 2 % In/Out decision
 			isShotIn = read(client, 1, 'double') % 1.0 = TRUE, 0.0 = FALSE
+            restitutionCoeff = 0;
 		end 
 	
 		% Receive calculated X,Y,Z trajectories
@@ -148,8 +153,11 @@ function [isShotIn, restitutionCoeff,  GCF] = MatlabClientAPI(MODE, MATCH_TYPE, 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% FORMAT RESULTS
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% IMPLEMENTATION NOTE:
-	% - Prep top down plot of court as described below
+	isShotIn = uint8(isShotIn);
+    restitutionCoeff = double(restitutionCoeff);
+    xCoeff = double(xCoeff);
+    yCoeff = double(yCoeff);
+    bounceT = double(bounceT);
 	
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% GUI RESULTS DISPLAY
@@ -220,7 +228,6 @@ function [isShotIn, restitutionCoeff,  GCF] = MatlabClientAPI(MODE, MATCH_TYPE, 
 		ylabel('Z Position, m');
 		grid on;
 		hold off;
-		saveas(gcf, 'volley4DoubleData.jpg', 'jpg');
 	
 	% 2. 3D plot of real and calc trajectory?
 		% Plotting
@@ -236,8 +243,6 @@ function [isShotIn, restitutionCoeff,  GCF] = MatlabClientAPI(MODE, MATCH_TYPE, 
 		grid on;
 		zlim([0 inf]); % Set the minimum Z value to 0
 		hold off;
-		saveas(gcf, 'volley4DoubleData3D.jpg', 'jpg');
 	
     end
-    GCF = gcf;
 end
