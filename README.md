@@ -2,7 +2,6 @@
    <img src = "https://raw.githubusercontent.com/petertle22/ESD2_Final_Project/main/MatlabScripts/Demo/EagleEyeCompanyLogo.png">
 </picture>
 
-# Eagle Eye Company
 ## Tennis Ball Tracking Solution
 1. Access Tennis Ball Tracking App in directory `/MatlabScripts/Demo/cdr_GUI.mlapp`
 2. Start the server on the snickerdoodle board with command line `python ZyqnServer_5.py`
