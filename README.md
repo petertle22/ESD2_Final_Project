@@ -1,6 +1,5 @@
 <picture>
-   <source media = "prefers-color-scheme:dark)" srcset = "https://raw.githubusercontent.com/petertle22/ESD2_Final_Project/main/MatlabScripts/Demo/EagleEyeCompanyLogo.png">
-   <source media = "prefers-color-scheme:light)" srcset = "https://raw.githubusercontent.com/petertle22/ESD2_Final_Project/main/MatlabScripts/Demo/EagleEyeCompanyLogo.png">
+   <img src = "https://raw.githubusercontent.com/petertle22/ESD2_Final_Project/main/MatlabScripts/Demo/EagleEyeCompanyLogo.png">
 </picture>
 
 # Eagle Eye Company
