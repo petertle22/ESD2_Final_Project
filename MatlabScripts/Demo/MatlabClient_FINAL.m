@@ -222,7 +222,7 @@ if receiveMode == 2
     saveas(gcf, 'volley4DoubleData.jpg', 'jpg');
 
 % 2. 3D plot of real and calc trajectory?
-% Plotting
+    % Plotting
     figure;
     plot3(poly_X, poly_Y, poly_Z, 'r'); % Plot calculated X,Y,Z positions in red
     hold on;
@@ -233,6 +233,7 @@ if receiveMode == 2
     ylabel('Y position, m');
     zlabel('Z position, m');
     grid on;
+    zlim([0 inf]); % Set the minimum Z value to 0
     hold off;
     saveas(gcf, 'volley4DoubleData3D.jpg', 'jpg');
 
