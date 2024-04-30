@@ -197,10 +197,11 @@ if receiveMode == 2
     real_Y = NaN(1, length(Fig4TValues));
     real_Z = NaN(1, length(Fig4TValues));
     for i = 1:length(Fig4TValues)
-        if i <= size(ballData, 1)
-            real_X(i) = ballData(i, 3);
-            real_Y(i) = ballData(i, 1);
-            real_Z(i) = ballData(i, 2);
+        index = Fig4TValues(i);
+        if index <= size(ballData, 1)
+            real_X(i) = ballData(index, 3);
+            real_Y(i) = ballData(index, 1);
+            real_Z(i) = ballData(index, 2);
         else
             error('Index exceeds the number of rows in ballData file.');
         end
@@ -215,9 +216,9 @@ if receiveMode == 2
     ylabel('Z Values, m');
     title('Comparison of Real Z Values and Unfiltered Z Values Over Time');
     legend('Real Z Values', 'Unfiltered Z Values');
-    hold off;
     % Save the figure to a JPEG file
     saveas(gcf, 'UNFILTERED_Z_VALUES.jpg');
+    hold off;
 
 
     % FIGURE 5 - Filtered Data
@@ -227,10 +228,11 @@ if receiveMode == 2
     real_Y = NaN(1, length(Fig5TValues));
     real_Z = NaN(1, length(Fig5TValues));
     for i = 1:length(Fig5TValues)
-        if i <= size(ballData, 1)
-            real_X(i) = ballData(i, 3);
-            real_Y(i) = ballData(i, 1);
-            real_Z(i) = ballData(i, 2);
+        index = Fig5TValues(i);
+        if index <= size(ballData, 1)
+            real_X(i) = ballData(index, 3);
+            real_Y(i) = ballData(index, 1);
+            real_Z(i) = ballData(index, 2);
         else
             error('Index exceeds the number of rows in ballData file.');
         end
@@ -245,9 +247,9 @@ if receiveMode == 2
     ylabel('Z Values, m');
     title('Comparison of Real Z Values and Filtered Z Values Over Time');
     legend('Real Z Values', 'Filtered Z Values');
-    hold off;
     % Save the figure to a JPEG file
     saveas(gcf, 'FILTERED_Z_VALUES.jpg');
+    hold off;
 
 
     % 2. 3D plot of real and calc trajectory?
@@ -263,7 +265,7 @@ if receiveMode == 2
     zlabel('Z position, m');
     grid on;
     zlim([0 inf]); % Set the minimum Z value to 0
-    hold off;
     saveas(gcf, 'FILTERED_DATA_3D.jpg', 'jpg');
+    hold off;
 
 end

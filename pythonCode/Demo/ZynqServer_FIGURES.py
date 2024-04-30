@@ -157,7 +157,7 @@ while(True):
             # Calculate Corresponding Result
             if (resultsReady):
                 # SEND FIGURE 4. Unfiltered Data 
-                tcp.sendBallXYZ(ballPositionXYZ)
+                tcp.sendBallXYZ(ballPositionXYZ, npSocket)
                 # Remove any completely inaccurate data
                 ballPositionXYZ = ball.removeInvalidXYZ(ballPositionXYZ)
 
@@ -173,7 +173,7 @@ while(True):
                     print('Calculating In/Out...')
                     ballPositionXYZ = ball.filterStereoXYZ(ballPositionXYZ, shotType)
                     # SEND FIGURE 5. Filtered Data 
-                    tcp.sendBallXYZ(ballPositionXYZ)
+                    tcp.sendBallXYZ(ballPositionXYZ, npSocket)
                     lineDecision, _, _ = ball.getLineDecision(ballPositionXYZ, matchType, shotType) # Calculate In/Out
                     tcp.sendResult(mode, lineDecision, npSocket) # Send In/Out
                     # Get and send trajectory of shot
