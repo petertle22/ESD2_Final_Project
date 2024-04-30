@@ -133,17 +133,17 @@ flush(client);
 
 % RECEIVE FIGURE 4
 Fig4NumFrames = read(client, 1, 'uint32');
-Fig4XValues = read(client,numFrames, 'double');
-Fig4YValues = read(client,numFrames, 'double');
-Fig4ZValues = read(client,numFrames, 'double');
-Fig4TValues = read(client,numFrames, 'uint32');
+Fig4XValues = read(client,Fig4NumFrames, 'double');
+Fig4YValues = read(client,Fig4NumFrames, 'double');
+Fig4ZValues = read(client,Fig4NumFrames, 'double');
+Fig4TValues = read(client,Fig4NumFrames, 'uint32');
 
 % RECEIVE FIGURE 5/6
 Fig5NumFrames = read(client, 1, 'uint32');
-Fig5XValues = read(client,numFrames, 'double');
-Fig5YValues = read(client,numFrames, 'double');
-Fig5ZValues = read(client,numFrames, 'double');
-Fig5TValues = read(client,numFrames, 'uint32');
+Fig5XValues = read(client,Fig5NumFrames, 'double');
+Fig5YValues = read(client,Fig5NumFrames, 'double');
+Fig5ZValues = read(client,Fig5NumFrames, 'double');
+Fig5TValues = read(client,Fig5NumFrames, 'uint32');
 
 % Verify result format
 receiveMode = read(client, 1, 'uint32');
